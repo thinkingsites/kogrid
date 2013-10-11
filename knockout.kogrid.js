@@ -5,13 +5,16 @@
 		// create global private variables
 		var
 	    ViewModel = function(viewModel,element,classes){
-	    	var self = this;
+	    	var self = this,_totalRows;
 	    	
 	    	// for now, while dependant on jquery, use the jquery extend
 	    	$.extend(self,defaultOptions,viewModel);
 	    	self.element = element;
 	    	self.templates = {};
 	    	self.classes = classes;
+		    self.pageSize = ko.isObservable(self.pageSize) ? self.pageSize : ko.observable(self.pageSize);
+	    	self.pageIndex = ko.isObservable(self.pageIndex) ? self.pageIndex : ko.observable(self.pageIndex);
+		    	
 	    	self.afterRender = _.debounce(function(){
 	    		var 
 	    			heads = $("." + self.classes.head,self.element),
@@ -39,6 +42,7 @@
 	    			});
 	    		};
 	    	},50);
+	    	
 	    	self.selectTemplate = function(column,rowData){
 	    		var 
 	    			templateName = self.templates[column.template],
@@ -59,6 +63,31 @@
 		    			data : result
 		    		};
 			    };
+		    	
+			    self.totalRows = ko.computed({
+			    	read : function(){
+							if(_.isNumber(_totalRows)){
+								return _totalRows;
+							} else {
+								var data = ko.isObservable(self.data) ? self.data() : self.data;
+								return data.length;
+							}
+			    	},
+			    	write : function(newVal){
+			    		_totalRows = newVal;
+			    	}
+			    });
+			    self.currentPage = ko.computed(function(){
+			    	var 
+			    		rows = self.totalRows(),
+				    	index = self.pageIndex();
+			    	if(_.isNumber(rows) && _.isNumber(index)){
+				    	return Math.ceil(index / rows);
+				    } else {
+				    	return NaN;
+				    }
+			    });
+			    
 			    self.first = function(){};
 			    self.previous = function(){};
 			    self.next = function(){};
@@ -85,74 +114,143 @@
 	    	}(viewModel));
 	    },
 	    cellTemplateId = 'ko-grid-default-cell-template',
+	    baseCssClass = "ko-grid-",
 			defaultOptions = {
 		    data : undefined,
 		    columns : undefined,
 		    pageSize: 25,
+		    pageSizeOptions : [10,25,50,100,200,'All'],
 		    pageIndex:1,
 		    pager: true,
 		    height: "auto"
 	    },
 	    templates = {
-		    headContainer : "<div data-bind='foreach : { data : columns, afterRender : $root.afterRender }'></div>" ,
-		    head : "<div data-bind='text : _.isString($data) ? $data : $data.title'></div>",
-		    scrollContainer : "<div></div>",
-		    table : "<table cellspacing='0' cellpadding='0'><tbody data-bind='foreach : { data : data, afterRender : $root.afterRender }'></tbody></table>",
-		    row : "<tr data-bind='foreach : $root.columns'></tr>",
-		    cell : "<td data-bind='template : $root.selectTemplate($data,$parent)'></td>",
-		    pager : "<div></div>",
-			  first : "<button>&lt;&lt; First</button>",
-			  previous : "<button>&lt; Previous</button>",
-			  next : "<button>Next &gt;</button>",
-			  last : "<button>Last  &gt;&gt;</button>",
-			  refresh  : "<button>Refresh</button>",
-			  goToPage : "<div><input type='text'><button>Go</button></div>",
-		    cellContentTemplate : "<script type='text/html' id='" + cellTemplateId + "'><!-- ko text: $data --><!-- /ko --></script>",
-	    },
-	    classNames = {
-		    base : "ko-grid-",
-		    main : "main",
-		    row:"row",
-		    table:"table",
-		    container:"container",
-		    scrollContainer:"scroll-container",
-		    headContainer:"head-container",
-		    head:"head",
-		    refresh:"refresh",
-		    first:"first", 
-		    previous:"previous", 
-		    next:"next", 
-		    last:"last",
-		    pager:"pager",
-		    pageSelect:"page-select",
-		    cell : "cell"
+		    headContainer : {
+		    	template : "<div data-bind='foreach : { data : columns, afterRender : $root.afterRender }'></div>" ,
+		    	cssClass : "head-container"
+		    },
+		    head : {
+		    	template : "<div data-bind='text : _.isString($data) ? $data : $data.title'></div>",
+		    	cssClass : "head"
+		    },
+		    scrollContainer : {
+		    	template : "<div></div>",
+		    	cssClass : "scroll-container"
+		    },
+		    table : {
+		    	template : "<table cellspacing='0' cellpadding='0'><tbody data-bind='foreach : { data : data, afterRender : $root.afterRender }'></tbody></table>",
+		    	cssClass : "table"
+		    },
+		    row : {
+		    	template : "<tr data-bind='foreach : $root.columns'></tr>",
+		    	cssClass : "row"
+		    },
+		    cell : {
+		    	template : "<td data-bind='template : $root.selectTemplate($data,$parent)'></td>",
+		    	cssClass : "cell"
+		    },
+		    pager : {
+		    	template : "<div></div>",
+		    	cssClass : "pager"
+		    },
+			  first : {
+		    	template : "<button data-bind='click : first' title='First'>&lt;&lt; First</button>",
+		    	cssClass : "first"
+		    },
+			  previous : {
+		    	template : "<button data-bind='click : previous' title='Previous'>&lt; Previous</button>",
+		    	cssClass : "previous"
+		    },
+			  next : {
+		    	template : "<button data-bind='click : next' title='Next'>Next &gt;</button>",
+		    	cssClass : "next"
+		    },
+			  last : {
+		    	template : "<button data-bind='click : last' title='Last'>Last  &gt;&gt;</button>",
+		    	cssClass : "last"
+		    },
+			  refresh  : {
+		    	template : "<button data-bind='click : refresh' title='Refresh'>Refresh</button>",
+		    	cssClass : "refresh"
+		    },
+		    pageSize : {
+		    	template : "<select data-bind='options : pageSizeOptions, value : pageSize'></select>",
+		    	cssClass : "page-size"
+		    },
+			  goToPage : {
+		    	template : "<div><input type='text'><button>Go</button></div>",
+		    	cssClass : "go-to-page"
+		    },
+			  pagingText :{
+		    	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: currentPage'></span></div>",
+		    	cssClass : "paging-text"
+		    },
+			  totalText :{
+		    	template : "<div><span data-bind='text:totalRows'></span> records</div>",
+		    	cssClass : "total-text"
+		    },
+		    cellContentTemplate : {
+		    	template : "<script type='text/html' id='" + cellTemplateId + "'><!-- ko text: $data --><!-- /ko --></script>"
+		    }
 	    },
 	    generateRandomId = function(){
-	    	return classNames.base + Math.round(Math.random() * Math.pow(10,10)).toString();
+	    	return baseCssClass + Math.round(Math.random() * Math.pow(10,10)).toString();
+	    },
+	    addElement = function(appendTo,key,css){
+		    // use jquery for ease of use for now until you can move away from it and use plain JS
+	    	var 
+	    		nodeDescription = templates[key],
+	    		result = $(nodeDescription.template).appendTo(appendTo);
+	    		
+	    	if(nodeDescription.cssClass){
+		    	result.addClass(baseCssClass + nodeDescription.cssClass)
+		    }
+		    
+		    if(css){
+		    	result.css(css);
+		    }
+		    
+		    return result;
 	    };
 		
 	  ko.bindingHandlers.kogrid = {
 	    init : function(element, valueAccessor){
-	    	// first create header,
-	    	// use jquery for ease of use for now until you can move away from it and use plain JS
-	    	var 
-	    		myClasses = _.clone(classNames),
-	    		myClasses = _.omit(myClasses,"base"),
-	    		myClasses = _.each(myClasses,function(item,key){
-	    			myClasses[key] = classNames.base + item;
-	    		}),
-	    		elem = $(element).addClass(myClasses.main),
-	    		headContainer = $(templates.headContainer).appendTo(elem).css({ position : 'relative' }).addClass(myClasses.headContainer),
-	    		head = $(templates.head).appendTo(headContainer).addClass(myClasses.head),
-	    		scrollContainer = $(templates.scrollContainer).appendTo(elem).addClass(myClasses.scrollContainer), 
-	    		table = $(templates.table).appendTo(scrollContainer).addClass(myClasses.table),
-	    		rows = $(templates.row).appendTo(table).addClass(myClasses.row),
-	    		cells = $(templates.cell).appendTo(rows).addClass(myClasses.cell),
-	    		pager = $(templates.pager).appendTo(elem).addClass(myClasses.pager),
-	    		defaultTemplate = $(templates.cellContentTemplate).appendTo(element),
-	    		// html is done now work on view model
+	    	var 	    		
+	    		// set up local settings
+	    		myClasses = (function(){
+	    			var result = {};
+	    			_.each(templates,function(item,key){
+		    			result[key] = baseCssClass + item.cssClass;
+		    		});
+		    		return result;
+	    		}()),
+	    		// create view model
 	    		value = valueAccessor(),
-	    		viewModel = new ViewModel(value,element,myClasses);
+	    		viewModel = new ViewModel(value,element,myClasses),
+	    		
+		    	// create html for header and body
+	    		elem = $(element).addClass(myClasses.main),
+	    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
+	    		head = addElement(headContainer,'head'),
+	    		scrollContainer = addElement(elem,'scrollContainer'), 
+	    		table = addElement(scrollContainer,'table'),
+	    		rows = addElement(table,'row'),
+	    		cells = addElement(rows,'cell'),
+	    		defaultTemplate = addElement(elem,'cellContentTemplate'),
+	    		pager,first,previous,next,last,refresh,goToPage;
+	    		
+	    	if(viewModel.pager){
+	    		pager = addElement(elem,'pager');
+	    		addElement(pager,'refresh');
+	    		addElement(pager,'first');
+	    		addElement(pager,'previous');
+	    		addElement(pager,'pagingText');
+	    		addElement(pager,'next');
+	    		addElement(pager,'last');
+	    		addElement(pager,'pageSize');
+	    		addElement(pager,'goToPage');
+	    		addElement(pager,'totalText');
+	    	}
 	    		
 	    	// add dynamic templates
 	    	_(viewModel.columns).filter(function(item){
@@ -176,8 +274,7 @@
 	    	// do data
 	    },
 		  options : defaultOptions,
-		  templates : templates,
-		  classNames : classNames
+		  templates : templates
 	  };
 	};
 	
