@@ -43,13 +43,26 @@
 	    				"white-space" : "nowrap"
 	    			});
 	    		};
-	    	},50);
+	    		
+	    		if(_.isFunction(self.renderComplete)){
+	    			self.renderComplete(element)
+	    		}
+	    	},10);
 
-	    	self.selectTemplate = function(column,rowData){
+				self.isColumnVisible = function($data){
+					if(ko.isObservable($data.visible))
+						return $data.visible();
+					else if(_.isBoolean($data.visible))
+						return $data.visible;
+					else 
+						return true;
+				};
+				
+	    	self.selectCellTemplate = function(column,rowData){
 	    	    var 
-                    // if there is a template that already exists, check for it
-	    			templateName = self.templates[column.template],
-	    			binding;
+	            // if there is a template that already exists, check for it
+		    			templateName = self.templates[column.template],
+		    			binding;
 
                 // if the template exists, load it
 	    	    if(templateName) {
@@ -57,25 +70,18 @@
 	    	            name: templateName,
 	    	            // the column can contain extra and/or default row data
                         // add the extra data to what's passed into the template
-	    	            data: _.extend({},column.data,rowData)
+	    	            data: _.extend({ },column.data,rowData)
 	    	        };
 	    	    } else {
 	    	        var 
-		    			result,
-		    			columnName =
-                            _.isString(column) ?
-	    	                column :
-                            column.key,
-		    		    columnValue = rowData[columnName],
-		    		    result =
-                            _.isFunction(columnValue) ?
-                            columnValue() :
-                            columnValue;
-
-	    	        binding = {
-	    	            name : cellTemplateId,
-	    	            data : result
-	    	        };
+				    			result,
+				    			columnName =_.isString(column) ? column : column.key,
+			    		    columnValue = rowData[columnName],
+			    		    result = _.isFunction(columnValue) ? columnValue() : columnValue,
+		    	        binding = {
+		    	            name : cellTemplateId,
+		    	            data : result
+		    	        };
 	    	    }
 	    		return binding;
 	    	};
@@ -99,8 +105,8 @@
 
 	    	self.totalPages = ko.computed(function () {
 	    	    var
-			    	totalRows = self.total.peek(),
-                    pageSize = self.pageSize.peek();
+			    	totalRows = self.total(),
+                    pageSize = self.pageSize();
 	    	    if (_.isNumber(totalRows) && _.isNumber(pageSize)) {
 	    	        return Math.ceil(totalRows / pageSize);
 				} else {
@@ -108,25 +114,30 @@
 				}
 			});
 
-	    	self.first = function () {
-	    	    self.pageIndex(1);
-	    	};
-	    	self.previous = function () {
-	    	    var newPage = self.pageIndex.peek();
-	    	    self.pageIndex(Math.max(1,newPage - 1));
-	    	};
-	    	self.next = function () {
-	    	    var
-                    newPage = self.pageIndex.peek(),
-	    	        maxPage = self.totalPages.peek();
-	    	    self.pageIndex(Math.min(maxPage,newPage + 1));
-	    	};
+    	self.first = function () {
+    	    self.pageIndex(1);
+    	};
+    	self.previous = function () {
+    	    var newPage = self.pageIndex.peek();
+    	    self.pageIndex(Math.max(1,newPage - 1));
+    	};
+    	self.next = function () {
+    	    var
+              newPage = self.pageIndex.peek(),
+    	        maxPage = self.totalPages.peek();
+    	    self.pageIndex(Math.min(maxPage,newPage + 1));
+    	};
 			self.last = function () {
 			    self.pageIndex(self.totalPages.peek());
 			};
 			self.goToPage = function () {
-			    self.pageIndex(1);
+					var page = parseInt(self.goToPageText.peek());
+					if(_.isNumber(page) && page >= 1 && page <= self.totalPages.peek())
+			    	self.pageIndex(page);
+			    else 
+			    	self.goToPageText("");
 			};
+    	self.goToPageText = ko.observable();
 	    	
 	    	// find all observables in 
 	    	(function sniff(val){
@@ -214,7 +225,7 @@
 		    	cssClass : "head-container"
 		    },
 		    head : {
-		    	template : "<div data-bind='text : _.isString($data) ? $data : $data.title'></div>",
+		    	template : "<div data-bind='text : (_.isString($data) ? $data : $data.title), visible : $root.isColumnVisible($data) '></div>",
 		    	cssClass : "head"
 		    },
 		    scrollContainer : {
@@ -226,11 +237,11 @@
 		    	cssClass : "table"
 		    },
 		    row : {
-		    	template : "<tr data-bind='foreach : $root.columns'></tr>",
+		    	template : "<tr data-bind='foreach : $root.columns, css : $index()%2 ? $root.classes.row + \"-even\" : $root.classes.row + \"-odd\" '></tr>",
 		    	cssClass : "row"
 		    },
 		    cell : {
-		    	template : "<td data-bind='template : $root.selectTemplate($data,$parent)'></td>",
+		    	template : "<td data-bind='template : $root.selectCellTemplate($data,$parent), visible : $root.isColumnVisible($data), style : $data.style, css : $data.css'></td>",
 		    	cssClass : "cell"
 		    },
 		    pager : {
@@ -262,7 +273,7 @@
 		    	cssClass : "page-size"
 		    },
 			goToPage : {
-		    	template : "<div><input type='text'><button>Go</button></div>",
+		    	template : "<div><input type='text' data-bind='value : goToPageText'><button data-bind='click : goToPage'>Go</button></div>",
 		    	cssClass : "go-to-page"
 		    },
 			pagingText :{
@@ -299,60 +310,64 @@
 		
 	  ko.bindingHandlers.kogrid = {
 	    init : function(element, valueAccessor){
-	    	var 	    		
-	    		// set up local settings
-	    		myClasses = (function(){
-	    			var result = {};
-	    			_.each(templates,function(item,key){
-		    			result[key] = baseCssClass + item.cssClass;
-		    		});
-		    		return result;
-	    		}()),
-	    		// create view model
-	    		value = valueAccessor(),
-	    		viewModel = new ViewModel(value,element,myClasses),
-	    		
-		    	// create html for header and body
-	    		elem = $(element).addClass(myClasses.main),
-	    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
-	    		head = addElement(headContainer,'head'),
-	    		scrollContainer = addElement(elem,'scrollContainer'), 
-	    		table = addElement(scrollContainer,'table'),
-	    		rows = addElement(table,'row'),
-	    		cells = addElement(rows,'cell'),
-	    		defaultTemplate = addElement(elem,'cellContentTemplate'),
-	    		pager,first,previous,next,last,refresh,goToPage;
-	    		
-	    	if(viewModel.pager){
-	    		pager = addElement(elem,'pager');
-	    		if (_.isFunction(viewModel.refresh) || viewModel.url) {
-	    		    addElement(pager, 'refresh');
-	    		}
-	    		addElement(pager,'first');
-	    		addElement(pager,'previous');
-	    		addElement(pager,'pagingText');
-	    		addElement(pager,'next');
-	    		addElement(pager,'last');
-	    		addElement(pager,'pageSize');
-	    		addElement(pager,'goToPage');
-	    		addElement(pager,'totalText');
-	    	}
-	    		
-	    	// add dynamic templates
-	    	_(viewModel.columns).filter(function(item){
-	    		return _.isString(item.template);
-	    	}).each(function(item){
-	    		// if the element exists, leave
-	    		if(_.isElement(document.getElementById(item.template))){
-	    			return;
-	    		} else {
-	    			var id = generateRandomId();
-	    			viewModel.templates[item.template] = id;
-	    			$("<script type='text/html' id='" + id + "'>" + item.template + "</script>").appendTo(element);
-	    		}
-	    	});
-	    		
-	    	ko.applyBindingsToDescendants(viewModel,element);
+	    	$(function(){
+		    	var 	    		
+		    		// set up local settings
+		    		myClasses = (function(){
+		    			var result = {};
+		    			_.each(templates,function(item,key){
+			    			result[key] = baseCssClass + item.cssClass;
+			    		});
+			    		return result;
+		    		}()),
+		    		
+		    		// create view model
+		    		value = valueAccessor(),
+		    		viewModel = new ViewModel(value,element,myClasses),
+		    		columns = ko.isObservable(viewModel.columns) ? viewModel.columns.peek() : viewModel.columns,
+		    		
+			    	// create html for header and body
+		    		elem = $(element).addClass(myClasses.main),
+		    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
+		    		head = addElement(headContainer,'head'),
+		    		scrollContainer = addElement(elem,'scrollContainer'), 
+		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
+		    		rows = addElement(table,'row'),
+		    		cells = addElement(rows,'cell'),
+		    		defaultTemplate = addElement(elem,'cellContentTemplate'),
+		    		pager,first,previous,next,last,refresh,goToPage;
+		    		
+		    	if(viewModel.pager){
+		    		pager = addElement(elem,'pager');
+		    		if (_.isFunction(viewModel.refresh) || viewModel.url) {
+		    		    addElement(pager, 'refresh');
+		    		}
+		    		addElement(pager,'first');
+		    		addElement(pager,'previous');
+		    		addElement(pager,'pagingText');
+		    		addElement(pager,'next');
+		    		addElement(pager,'last');
+		    		addElement(pager,'pageSize');
+		    		addElement(pager,'goToPage');
+		    		addElement(pager,'totalText');
+		    	}
+		    		
+		    	// add dynamic templates
+		    	_(columns).filter(function(item){
+		    		return _.isString(item.template);
+		    	}).each(function(item){
+		    		// if the element exists, leave
+		    		if(_.isElement(document.getElementById(item.template))){
+		    			return;
+		    		} else {
+		    			var id = generateRandomId();
+		    			viewModel.templates[item.template] = id;
+		    			$("<script type='text/html' id='" + id + "'>" + item.template + "</script>").appendTo(element);
+		    		}
+		    	});
+		    		
+		    	ko.applyBindingsToDescendants(viewModel,element);
+		    });
 	    		
 	    	return { controlsDescendantBindings : true };
 	    }, 

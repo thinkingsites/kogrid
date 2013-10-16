@@ -44,6 +44,7 @@
 
 .ko-grid-scroll-container {
 	overflow-y:scroll;
+	height:300px;
 }
 
 .ko-grid-pager {
@@ -54,6 +55,7 @@
 	border:solid 1px black;
 	border-top:none;
 	padding:0 10px 0 0;
+	border-top: solid 1px black;
 }
 
 .ko-grid-pager > *{
@@ -76,4 +78,5 @@
 
 .ko-grid-go-to-page input{
 	width:30px;
+	text-align:center;
 }
