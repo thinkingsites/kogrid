@@ -27,18 +27,18 @@
 							    style : { width : "50px", "text-align" : "center" },
 							    css : "orange"
 							},
-							{ title: "Name", key: "name", css : "hover" },
+							{ title: "Name", key: "name", css : "hover", sortable : true },
 							{ title : "Occupation", key : "occupation" },
 							{ title : "Address", key : "address" },
 							{ title : "City", key : "city" },
-							{ title : "State", key : "state" },
-							{ title : "ZipCode", key : "zipcode" },
+							{ title : "State", key : "state", sortable : true },
+							{ title : "ZipCode", key : "zipcode", sortable : true },
 							{ title : "Phone", key : "phone", visible : ko.observable(false) },
 							{ title : "Status", key : "status", visible : ko.observable(false) },
 							{ title : "Age", key : "age", style : { width : "50px", "text-align" : "center" }, visible : ko.observable(false) }
 				    ]),
 				    renderComplete : function(element){
-				    	$("button",element).css({ "background-color" : "pink" });
+				    	$(".ko-grid-pager button",element).css({ "background-color" : "pink" });
 				    }
 				};
 				
@@ -55,6 +55,7 @@
             .orange { background-color : orange; }
             .hover:hover { background-color : #00FF00; }
             .ko-grid-head { text-align:center; }
+            .ko-grid-sort-button { background-color:transparent; border:none;display:inline-block; } 
         </style>
 	</head>
 	<body style="margin:20px;font-size:12px;font-family:sans-serif;">

@@ -4,18 +4,27 @@
 	var binding = function($, ko,_){
 		// create global private variables
 		var
+			makeObservable = function(obs){
+				return ko.isObservable(obs) ? obs : ko.observable(obs)
+			},
+			getObservable = function(obs){
+				return ko.isObservable(obs) ? obs() : obs;
+			},
+			peekObservable = function(obs){
+				return ko.isObservable(obs) ? obs.peek() : obs;
+			},
 	    ViewModel = function(viewModel,element,classes){
-	    	var self = this,_totalRows,_ajax;
+	    	var self = this,_totalRows,_ajax,_sorting = [];
 	    	
 	    	// for now, while dependant on jquery, use the jquery extend
 	    	$.extend(self,defaultOptions,viewModel);
 	    	self.element = element;
 	    	self.templates = {};
 	    	self.classes = classes;
-	    	self.rows = ko.isObservable(self.rows) ? self.pageSize : ko.observable(self.rows);
-	    	self.total = ko.isObservable(self.total) ? self.pageSize : ko.observable(self.total);
-	    	self.pageSize = ko.isObservable(self.pageSize) ? self.pageSize : ko.observable(self.pageSize);
-	    	self.pageIndex = ko.isObservable(self.pageIndex) ? self.pageIndex : ko.observable(self.pageIndex);
+	    	self.rows = makeObservable(self.rows);
+	    	self.total = makeObservable(self.total);
+	    	self.pageSize = makeObservable(self.pageSize);
+	    	self.pageIndex = makeObservable(self.pageIndex);
 
 	    	self.afterRender = _.debounce(function(){
 	    		var 
@@ -57,6 +66,27 @@
 					else 
 						return true;
 				};
+				
+				self.sort = function(event){
+					var column = this;
+					_sorting = _.filter(_sorting,function(item){
+						return item.key != column.key;
+					});
+					_sorting.unshift({ 
+						key : column.key,
+						direction : column.direction || "asc" 
+					});
+					
+					if(_.isFunction(self.refresh)){
+						self.refresh();
+					} else {
+						if(ko.isObservable(self.rows)) {
+							// sort the observable by the sorting
+						} else {
+							// sort the array by the sorting
+						}
+					}
+				}
 				
 	    	self.selectCellTemplate = function(column,rowData){
 	    	    var 
@@ -105,8 +135,8 @@
 
 	    	self.totalPages = ko.computed(function () {
 	    	    var
-			    	totalRows = self.total(),
-                    pageSize = self.pageSize();
+			    		totalRows = self.total(),
+              pageSize = self.pageSize();
 	    	    if (_.isNumber(totalRows) && _.isNumber(pageSize)) {
 	    	        return Math.ceil(totalRows / pageSize);
 				} else {
@@ -167,17 +197,22 @@
 
                     // calculate paging data and create ajax object
 	    	        var 
-                        pageIndex = self.pageIndex.peek(),
-                        pageSize = self.pageSize.peek(),
-                        data =
-                            _.isNumber(pageSize) ?
-                            { pageIndex: pageIndex, pageSize: pageSize } :
-                            { pageIndex: 1 };
+                    pageIndex = self.pageIndex.peek(),
+                    pageSize = self.pageSize.peek(),
+                    paging = _.isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
+                    sorting = {
+	                    sortColumns : _.map(_sorting,function(item){
+	                    	return item.key;
+	                    }),
+	                    sortDirections : _.map(_sorting,function(item){
+	                    	return item.direction;
+	                    })
+                    };
 
                     // do ajax
 	    	        return $.ajax({
 	    	            url: self.url,
-	    	            data: _.extend(data,self.data),
+	    	            data: _.extend(paging,sorting,self.data),
 	    	            type: self.type || 'get',
 	    	            dataType: self.dataType || 'json',
 	    	        }).done(function (ajaxResult) {
@@ -192,15 +227,14 @@
 	    	                self.loaded(self.element,self.rows.peek());
 	    	            }
 	    	        })
-                    // return promise object
-                    .promise(); 
+                // return promise object
+                .promise(); 
 	    	    };
 
 	    	    self.pageIndex.subscribe(self.refresh);
 	    	    self.pageSize.subscribe(self.refresh);
 	    	    self.refresh();
 	    	}
-
 	    },
 	    cellTemplateId = 'ko-grid-default-cell-template',
 	    baseCssClass = "ko-grid-",
@@ -225,8 +259,12 @@
 		    	cssClass : "head-container"
 		    },
 		    head : {
-		    	template : "<div data-bind='text : (_.isString($data) ? $data : $data.title), visible : $root.isColumnVisible($data) '></div>",
+		    	template : "<div data-bind='visible : $root.isColumnVisible($data) '><span data-bind='text : (_.isString($data) ? $data : $data.title)'></span></div>",
 		    	cssClass : "head"
+		    },
+		    sortButton : {
+		    	template : "<div type='button' data-bind='click : $root.sort '>Sort</div>",
+		    	cssClass : 'sort-button'
 		    },
 		    scrollContainer : {
 		    	template : "<div></div>",
@@ -249,23 +287,23 @@
 		    	cssClass : "pager"
 		    },
 			  first : {
-		    	template : "<button data-bind='click : first' title='First'>&lt;&lt; First</button>",
+		    	template : "<button type='button' data-bind='click : first' title='First'>&lt;&lt; First</button>",
 		    	cssClass : "first"
 		    },
 			  previous : {
-		    	template : "<button data-bind='click : previous' title='Previous'>&lt; Previous</button>",
+		    	template : "<button type='button' data-bind='click : previous' title='Previous'>&lt; Previous</button>",
 		    	cssClass : "previous"
 		    },
 			  next : {
-		    	template : "<button data-bind='click : next' title='Next'>Next &gt;</button>",
+		    	template : "<button type='button' data-bind='click : next' title='Next'>Next &gt;</button>",
 		    	cssClass : "next"
 		    },
 			  last : {
-		    	template : "<button data-bind='click : last' title='Last'>Last  &gt;&gt;</button>",
+		    	template : "<button type='button' data-bind='click : last' title='Last'>Last  &gt;&gt;</button>",
 		    	cssClass : "last"
 		    },
 			  refresh  : {
-		    	template : "<button data-bind='click : refresh' title='Refresh'>Refresh</button>",
+		    	template : "<button type='button' data-bind='click : refresh' title='Refresh'>Refresh</button>",
 		    	cssClass : "refresh"
 		    },
 		    pageSize : {
@@ -330,6 +368,7 @@
 		    		elem = $(element).addClass(myClasses.main),
 		    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
 		    		head = addElement(headContainer,'head'),
+		    		sortButton = addElement(head,'sortButton'),
 		    		scrollContainer = addElement(elem,'scrollContainer'), 
 		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
 		    		rows = addElement(table,'row'),

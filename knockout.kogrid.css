@@ -80,3 +80,10 @@
 	width:30px;
 	text-align:center;
 }
+
+.ko-grid-sort-button { 
+	background-color:transparent; 
+	border:none;
+	display:inline-block; 
+	cursor:pointer;
+} 
