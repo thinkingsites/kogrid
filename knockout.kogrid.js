@@ -5,16 +5,18 @@
 		// create global private variables
 		var
 	    ViewModel = function(viewModel,element,classes){
-	    	var self = this,_totalRows;
+	    	var self = this,_totalRows,_ajax;
 	    	
 	    	// for now, while dependant on jquery, use the jquery extend
 	    	$.extend(self,defaultOptions,viewModel);
 	    	self.element = element;
 	    	self.templates = {};
 	    	self.classes = classes;
-		    self.pageSize = ko.isObservable(self.pageSize) ? self.pageSize : ko.observable(self.pageSize);
+	    	self.rows = ko.isObservable(self.rows) ? self.pageSize : ko.observable(self.rows);
+	    	self.total = ko.isObservable(self.total) ? self.pageSize : ko.observable(self.total);
+	    	self.pageSize = ko.isObservable(self.pageSize) ? self.pageSize : ko.observable(self.pageSize);
 	    	self.pageIndex = ko.isObservable(self.pageIndex) ? self.pageIndex : ko.observable(self.pageIndex);
-		    	
+
 	    	self.afterRender = _.debounce(function(){
 	    		var 
 	    			heads = $("." + self.classes.head,self.element),
@@ -22,7 +24,7 @@
 	    			h,c;
 	    			
 	    		if(heads.length != cells.length){
-	    			throw 'Head count does not match the cell count.';
+	    			return;
 	    		}
 	    		
 	    		heads.parents().first().height(heads.first().height());
@@ -42,60 +44,89 @@
 	    			});
 	    		};
 	    	},50);
-	    	
+
 	    	self.selectTemplate = function(column,rowData){
-	    		var 
+	    	    var 
+                    // if there is a template that already exists, check for it
 	    			templateName = self.templates[column.template],
 	    			binding;
-	    		if(templateName) {
-		    		binding = {
-		    			name : templateName,
-		    			data : rowData
-		    		};
-			    } else {
-		    		var 
+
+                // if the template exists, load it
+	    	    if(templateName) {
+	    	        binding = {
+	    	            name: templateName,
+	    	            // the column can contain extra and/or default row data
+                        // add the extra data to what's passed into the template
+	    	            data: _.extend({},column.data,rowData)
+	    	        };
+	    	    } else {
+	    	        var 
 		    			result,
-		    			columnName = _.isString(column) ? column : column.key,
-		    		  columnValue = rowData[columnName],
-		    		  result = _.isFunction(columnValue) ? columnValue() : columnValue;
-		    		binding = {
-		    			name : cellTemplateId,
-		    			data : result
-		    		};
-			    };
-		    	
-			    self.totalRows = ko.computed({
-			    	read : function(){
-							if(_.isNumber(_totalRows)){
-								return _totalRows;
-							} else {
-								var data = ko.isObservable(self.data) ? self.data() : self.data;
-								return data.length;
-							}
-			    	},
-			    	write : function(newVal){
-			    		_totalRows = newVal;
-			    	}
-			    });
-			    self.currentPage = ko.computed(function(){
-			    	var 
-			    		rows = self.totalRows(),
-				    	index = self.pageIndex();
-			    	if(_.isNumber(rows) && _.isNumber(index)){
-				    	return Math.ceil(index / rows);
-				    } else {
-				    	return NaN;
-				    }
-			    });
-			    
-			    self.first = function(){};
-			    self.previous = function(){};
-			    self.next = function(){};
-			    self.last = function(){};
-			    self.refresh = function(){};
-			    self.goToPage = function(){};
+		    			columnName =
+                            _.isString(column) ?
+	    	                column :
+                            column.key,
+		    		    columnValue = rowData[columnName],
+		    		    result =
+                            _.isFunction(columnValue) ?
+                            columnValue() :
+                            columnValue;
+
+	    	        binding = {
+	    	            name : cellTemplateId,
+	    	            data : result
+	    	        };
+	    	    }
 	    		return binding;
 	    	};
+		    
+	    	if (!ko.isObservable(self.total)) {
+	    	    self.total = ko.computed({
+	    	        read: function () {
+	    	            if (_.isNumber(_totalRows)) {
+	    	                return _totalRows;
+	    	            } else if (ko.isObservable(self.rows)) {
+	    	                return self.rows.peek().length;
+	    	            } else if (_.isArray(self.rows)) {
+	    	                return self.rows.length;
+	    	            }
+	    	        },
+	    	        write: function (newVal) {
+	    	            _totalRows = newVal;
+	    	        }
+	    	    });
+	    	}
+
+	    	self.totalPages = ko.computed(function () {
+	    	    var
+			    	totalRows = self.total.peek(),
+                    pageSize = self.pageSize.peek();
+	    	    if (_.isNumber(totalRows) && _.isNumber(pageSize)) {
+	    	        return Math.ceil(totalRows / pageSize);
+				} else {
+				    return 1;
+				}
+			});
+
+	    	self.first = function () {
+	    	    self.pageIndex(1);
+	    	};
+	    	self.previous = function () {
+	    	    var newPage = self.pageIndex.peek();
+	    	    self.pageIndex(Math.max(1,newPage - 1));
+	    	};
+	    	self.next = function () {
+	    	    var
+                    newPage = self.pageIndex.peek(),
+	    	        maxPage = self.totalPages.peek();
+	    	    self.pageIndex(Math.min(maxPage,newPage + 1));
+	    	};
+			self.last = function () {
+			    self.pageIndex(self.totalPages.peek());
+			};
+			self.goToPage = function () {
+			    self.pageIndex(1);
+			};
 	    	
 	    	// find all observables in 
 	    	(function sniff(val){
@@ -112,17 +143,70 @@
 		    		}
 	    		});
 	    	}(viewModel));
+
+            // now that we're set up, let's set up ajax only if we've been given a url
+	    	if (_.isString(self.url)) {
+	    	    self.refresh = function () {
+
+                    // if there is a loading function, fire it
+	    	        if (_.isFunction(self.loading)) {
+                        // pass in the element and the old rows
+	    	            self.loading(self.element,self.rows.peek());
+	    	        }
+
+                    // calculate paging data and create ajax object
+	    	        var 
+                        pageIndex = self.pageIndex.peek(),
+                        pageSize = self.pageSize.peek(),
+                        data =
+                            _.isNumber(pageSize) ?
+                            { pageIndex: pageIndex, pageSize: pageSize } :
+                            { pageIndex: 1 };
+
+                    // do ajax
+	    	        return $.ajax({
+	    	            url: self.url,
+	    	            data: _.extend(data,self.data),
+	    	            type: self.type || 'get',
+	    	            dataType: self.dataType || 'json',
+	    	        }).done(function (ajaxResult) {
+                        // set observables
+	    	            self.rows(ajaxResult.rows);
+	    	            self.total(ajaxResult.total || ajaxResult.rows.length);
+	    	        }).always(function () {
+
+                        // if there is a loaded function, fire it
+	    	            if (_.isFunction(self.loaded)) {
+                            // pass in the element and the new rows
+	    	                self.loaded(self.element,self.rows.peek());
+	    	            }
+	    	        })
+                    // return promise object
+                    .promise(); 
+	    	    };
+
+	    	    self.pageIndex.subscribe(self.refresh);
+	    	    self.pageSize.subscribe(self.refresh);
+	    	    self.refresh();
+	    	}
+
 	    },
 	    cellTemplateId = 'ko-grid-default-cell-template',
 	    baseCssClass = "ko-grid-",
-			defaultOptions = {
+	    defaultOptions = {
 		    data : undefined,
 		    columns : undefined,
 		    pageSize: 25,
 		    pageSizeOptions : [10,25,50,100,200,'All'],
 		    pageIndex:1,
 		    pager: true,
-		    height: "auto"
+		    height: "auto",
+		    loading: function (element) {
+		        $("table", element).css({ opacity: 0.5 });
+		    },
+		    loaded: function (element) {
+		        $("table", element).css({ opacity: 1 });
+		    }
 	    },
 	    templates = {
 		    headContainer : {
@@ -138,7 +222,7 @@
 		    	cssClass : "scroll-container"
 		    },
 		    table : {
-		    	template : "<table cellspacing='0' cellpadding='0'><tbody data-bind='foreach : { data : data, afterRender : $root.afterRender }'></tbody></table>",
+		    	template : "<table cellspacing='0' cellpadding='0'><tbody data-bind='foreach : { data : rows, afterRender : $root.afterRender }'></tbody></table>",
 		    	cssClass : "table"
 		    },
 		    row : {
@@ -177,16 +261,16 @@
 		    	template : "<select data-bind='options : pageSizeOptions, value : pageSize'></select>",
 		    	cssClass : "page-size"
 		    },
-			  goToPage : {
+			goToPage : {
 		    	template : "<div><input type='text'><button>Go</button></div>",
 		    	cssClass : "go-to-page"
 		    },
-			  pagingText :{
-		    	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: currentPage'></span></div>",
+			pagingText :{
+		    	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: totalPages'></span></div>",
 		    	cssClass : "paging-text"
 		    },
 			  totalText :{
-		    	template : "<div><span data-bind='text:totalRows'></span> records</div>",
+		    	template : "<div><span data-bind='text:total'></span> records</div>",
 		    	cssClass : "total-text"
 		    },
 		    cellContentTemplate : {
@@ -241,7 +325,9 @@
 	    		
 	    	if(viewModel.pager){
 	    		pager = addElement(elem,'pager');
-	    		addElement(pager,'refresh');
+	    		if (_.isFunction(viewModel.refresh) || viewModel.url) {
+	    		    addElement(pager, 'refresh');
+	    		}
 	    		addElement(pager,'first');
 	    		addElement(pager,'previous');
 	    		addElement(pager,'pagingText');
