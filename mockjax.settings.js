@@ -9,6 +9,15 @@
             params[item.match(/\w+/).toString()] = parseInt(item.match(/\d+/));
         });
         var results = window.ajaxData;
+
+        if (settings.data.sortColumn) {
+            // no need to do complex sorting
+            results = _.sortBy(results, settings.data.sortColumn[0]);
+        }
+
+        if (settings.data.sortDirection && settings.data.sortDirection[0] == 'desc') {
+            results.reverse();
+        }
         
         if (_.isNumber(settings.data.pageIndex) && _.isNumber(settings.data.pageSize)) {
             results = results.slice((settings.data.pageIndex - 1) * settings.data.pageSize, (settings.data.pageIndex) * settings.data.pageSize);

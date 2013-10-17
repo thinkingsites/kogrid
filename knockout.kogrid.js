@@ -14,7 +14,7 @@
 				return ko.isObservable(obs) ? obs.peek() : obs;
 			},
 	    ViewModel = function(viewModel,element,classes){
-	    	var self = this,_totalRows,_ajax,_sorting = [];
+	    	var self = this,_totalRows,_ajax,_sorting = ko.observableArray();
 	    	
 	    	// for now, while dependant on jquery, use the jquery extend
 	    	$.extend(self,defaultOptions,viewModel);
@@ -58,35 +58,81 @@
 	    		}
 	    	},10);
 
-				self.isColumnVisible = function($data){
-					if(ko.isObservable($data.visible))
-						return $data.visible();
-					else if(_.isBoolean($data.visible))
-						return $data.visible;
-					else 
-						return true;
-				};
+			self.isColumnVisible = function($data){
+				if(ko.isObservable($data.visible))
+					return $data.visible();
+				else if(_.isBoolean($data.visible))
+					return $data.visible;
+				else 
+					return true;
+			};
 				
-				self.sort = function(event){
-					var column = this;
-					_sorting = _.filter(_sorting,function(item){
-						return item.key != column.key;
-					});
-					_sorting.unshift({ 
-						key : column.key,
-						direction : column.direction || "asc" 
-					});
-					
-					if(_.isFunction(self.refresh)){
-						self.refresh();
-					} else {
-						if(ko.isObservable(self.rows)) {
-							// sort the observable by the sorting
-						} else {
-							// sort the array by the sorting
-						}
-					}
-				}
+			self.sort = function (event) {
+
+                // if the column is not sortable, leave immediately
+			    if (this.sortable !== true)
+			        return;
+
+			    var
+                    column = this,
+                    appendSort =
+                    // find the existing
+                    _.find(_sorting.peek(), function (item, index) {
+                        return item.key === column.key;
+                    }) || {
+                        // 
+                        key: column.key,
+                        direction: column.direction
+                    },
+                    sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
+			            return item.key != column.key;
+			        });
+
+			    if (appendSort.direction === sorting.asc) {
+			        appendSort.direction = sorting.desc;
+			    } else {
+			        appendSort.direction = sorting.asc;
+			    }
+
+			    if (sorting.allowMultiSort) {
+			        // this should set off the subscribed observables
+			        sortingPlaceholder.unshift(appendSort);
+			        _sorting(sortingPlaceholder);
+			    } else {
+			        _sorting([appendSort]);
+			    }
+
+			    if (ko.isObservable(column.direction)) {
+			        column.direction(appendSort.direction);
+			    } else {
+			        column.direction = appendSort.direction;
+			    }
+
+			    if (_.isFunction(self.refresh)) {
+			        self.refresh();
+			    } else {
+			        if (ko.isObservable(self.rows)) {
+			            // sort the observable by the sorting
+			        } else {
+			            // sort the array by the sorting
+			        }
+			    }
+			};
+
+			self.sortClass = function (column) {
+			    console.info("sorting class");
+			    var mySort = _.find(_sorting(), function (item, index) {
+			        return item.key === column.key;
+			    });
+			    if (mySort) {
+			        if (mySort.direction == sorting.asc) {
+			            return sorting.ascendingClass;
+			        } else if (mySort.direction == sorting.desc) {
+			            return sorting.descendingClass;
+			        }
+			    } 
+			    return sorting.noSortClass;
+			};
 				
 	    	self.selectCellTemplate = function(column,rowData){
 	    	    var 
@@ -104,10 +150,10 @@
 	    	        };
 	    	    } else {
 	    	        var 
-				    			result,
-				    			columnName =_.isString(column) ? column : column.key,
-			    		    columnValue = rowData[columnName],
-			    		    result = _.isFunction(columnValue) ? columnValue() : columnValue,
+				    	result,
+				    	columnName =_.isString(column) ? column : column.key,
+			    		columnValue = rowData[columnName],
+			    		result = _.isFunction(columnValue) ? columnValue() : columnValue,
 		    	        binding = {
 		    	            name : cellTemplateId,
 		    	            data : result
@@ -200,19 +246,18 @@
                     pageIndex = self.pageIndex.peek(),
                     pageSize = self.pageSize.peek(),
                     paging = _.isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
-                    sorting = {
-	                    sortColumns : _.map(_sorting,function(item){
-	                    	return item.key;
-	                    }),
-	                    sortDirections : _.map(_sorting,function(item){
-	                    	return item.direction;
-	                    })
-                    };
+                    ajaxSorting = {};
+	    	        ajaxSorting[sorting.sortColumn] = _.map(_sorting.peek(),function(item){
+	    	            return item.key;
+	    	        });
+	    	        ajaxSorting[sorting.sortDirection] = _.map(_sorting.peek(), function (item) {
+	    	            return item.direction;
+	    	        });
 
                     // do ajax
 	    	        return $.ajax({
 	    	            url: self.url,
-	    	            data: _.extend(paging,sorting,self.data),
+	    	            data: _.extend(paging, ajaxSorting, self.data),
 	    	            type: self.type || 'get',
 	    	            dataType: self.dataType || 'json',
 	    	        }).done(function (ajaxResult) {
@@ -220,15 +265,14 @@
 	    	            self.rows(ajaxResult.rows);
 	    	            self.total(ajaxResult.total || ajaxResult.rows.length);
 	    	        }).always(function () {
-
                         // if there is a loaded function, fire it
 	    	            if (_.isFunction(self.loaded)) {
                             // pass in the element and the new rows
 	    	                self.loaded(self.element,self.rows.peek());
 	    	            }
 	    	        })
-                // return promise object
-                .promise(); 
+                    // return promise object
+                    .promise(); 
 	    	    };
 
 	    	    self.pageIndex.subscribe(self.refresh);
@@ -237,7 +281,6 @@
 	    	}
 	    },
 	    cellTemplateId = 'ko-grid-default-cell-template',
-	    baseCssClass = "ko-grid-",
 	    defaultOptions = {
 		    data : undefined,
 		    columns : undefined,
@@ -256,78 +299,78 @@
 	    templates = {
 		    headContainer : {
 		    	template : "<div data-bind='foreach : { data : columns, afterRender : $root.afterRender }'></div>" ,
-		    	cssClass : "head-container"
+		    	cssClass: "ko-grid-head-container"
 		    },
 		    head : {
-		    	template : "<div data-bind='visible : $root.isColumnVisible($data) '><span data-bind='text : (_.isString($data) ? $data : $data.title)'></span></div>",
-		    	cssClass : "head"
+		    	template : "<div data-bind='visible : $root.isColumnVisible($data), click : $root.sort, css : { \"ko-grid-is-sortable\" : $data.sortable } '><span data-bind='text : (_.isString($data) ? $data : $data.title)'></span></div>",
+		    	cssClass: "ko-grid-head"
 		    },
-		    sortButton : {
-		    	template : "<div type='button' data-bind='click : $root.sort '>Sort</div>",
-		    	cssClass : 'sort-button'
+		    sortIcon : {
+		        template: "<span type='button' data-bind='visible: $data.sortable,  css : $root.sortClass($data) '>Sort</span>",
+		    	cssClass: 'ko-grid-sort-icon'
 		    },
 		    scrollContainer : {
 		    	template : "<div></div>",
-		    	cssClass : "scroll-container"
+		    	cssClass: "ko-grid-scroll-container"
 		    },
 		    table : {
 		    	template : "<table cellspacing='0' cellpadding='0'><tbody data-bind='foreach : { data : rows, afterRender : $root.afterRender }'></tbody></table>",
-		    	cssClass : "table"
+		    	cssClass: "ko-grid-table"
 		    },
 		    row : {
 		    	template : "<tr data-bind='foreach : $root.columns, css : $index()%2 ? $root.classes.row + \"-even\" : $root.classes.row + \"-odd\" '></tr>",
-		    	cssClass : "row"
+		    	cssClass: "ko-grid-row"
 		    },
 		    cell : {
 		    	template : "<td data-bind='template : $root.selectCellTemplate($data,$parent), visible : $root.isColumnVisible($data), style : $data.style, css : $data.css'></td>",
-		    	cssClass : "cell"
+		    	cssClass: "ko-grid-cell"
 		    },
 		    pager : {
 		    	template : "<div></div>",
-		    	cssClass : "pager"
+		    	cssClass: "ko-grid-pager"
 		    },
 			  first : {
 		    	template : "<button type='button' data-bind='click : first' title='First'>&lt;&lt; First</button>",
-		    	cssClass : "first"
+		    	cssClass: "ko-grid-first"
 		    },
 			  previous : {
 		    	template : "<button type='button' data-bind='click : previous' title='Previous'>&lt; Previous</button>",
-		    	cssClass : "previous"
+		    	cssClass: "ko-grid-previous"
 		    },
 			  next : {
 		    	template : "<button type='button' data-bind='click : next' title='Next'>Next &gt;</button>",
-		    	cssClass : "next"
+		    	cssClass: "ko-grid-next"
 		    },
 			  last : {
 		    	template : "<button type='button' data-bind='click : last' title='Last'>Last  &gt;&gt;</button>",
-		    	cssClass : "last"
+		    	cssClass: "ko-grid-last"
 		    },
 			  refresh  : {
 		    	template : "<button type='button' data-bind='click : refresh' title='Refresh'>Refresh</button>",
-		    	cssClass : "refresh"
+		    	cssClass: "ko-grid-refresh"
 		    },
 		    pageSize : {
 		    	template : "<select data-bind='options : pageSizeOptions, value : pageSize'></select>",
-		    	cssClass : "page-size"
+		    	cssClass: "ko-grid-page-size"
 		    },
 			goToPage : {
 		    	template : "<div><input type='text' data-bind='value : goToPageText'><button data-bind='click : goToPage'>Go</button></div>",
-		    	cssClass : "go-to-page"
+		    	cssClass: "ko-grid-go-to-page"
 		    },
 			pagingText :{
 		    	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: totalPages'></span></div>",
-		    	cssClass : "paging-text"
+		    	cssClass: "ko-grid-paging-text"
 		    },
 			  totalText :{
 		    	template : "<div><span data-bind='text:total'></span> records</div>",
-		    	cssClass : "total-text"
+		    	cssClass: "ko-grid-total-text"
 		    },
 		    cellContentTemplate : {
 		    	template : "<script type='text/html' id='" + cellTemplateId + "'><!-- ko text: $data --><!-- /ko --></script>"
 		    }
 	    },
 	    generateRandomId = function(){
-	    	return baseCssClass + Math.round(Math.random() * Math.pow(10,10)).toString();
+	        return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
 	    },
 	    addElement = function(appendTo,key,css){
 		    // use jquery for ease of use for now until you can move away from it and use plain JS
@@ -336,7 +379,7 @@
 	    		result = $(nodeDescription.template).appendTo(appendTo);
 	    		
 	    	if(nodeDescription.cssClass){
-		    	result.addClass(baseCssClass + nodeDescription.cssClass)
+		    	result.addClass(nodeDescription.cssClass)
 		    }
 		    
 		    if(css){
@@ -344,8 +387,18 @@
 		    }
 		    
 		    return result;
+	    },
+	    sorting = {
+            allowMultiSort : false,
+            sortColumn : "sortColumn",
+	        sortDirection : "sortDirection",
+	        asc: "asc",
+	        desc: "desc",
+	        noSortClass: "ko-grid-sort-none",
+	        ascendingClass : "ko-grid-sort-asc",
+            descendingClass: "ko-grid-sort-desc"
 	    };
-		
+	
 	  ko.bindingHandlers.kogrid = {
 	    init : function(element, valueAccessor){
 	    	$(function(){
@@ -354,7 +407,7 @@
 		    		myClasses = (function(){
 		    			var result = {};
 		    			_.each(templates,function(item,key){
-			    			result[key] = baseCssClass + item.cssClass;
+			    			result[key] = item.cssClass;
 			    		});
 			    		return result;
 		    		}()),
@@ -368,7 +421,7 @@
 		    		elem = $(element).addClass(myClasses.main),
 		    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
 		    		head = addElement(headContainer,'head'),
-		    		sortButton = addElement(head,'sortButton'),
+		    		sortIcon = addElement(head, 'sortIcon'),
 		    		scrollContainer = addElement(elem,'scrollContainer'), 
 		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
 		    		rows = addElement(table,'row'),
@@ -413,8 +466,9 @@
 	    update : function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext){
 	    	// do data
 	    },
-		  options : defaultOptions,
-		  templates : templates
+		options : defaultOptions,
+		templates: templates,
+		sorting: sorting
 	  };
 	};
 	

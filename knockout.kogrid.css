@@ -81,9 +81,14 @@
 	text-align:center;
 }
 
-.ko-grid-sort-button { 
+.ko-grid-is-sortable
+{
+    cursor: pointer;
+}
+
+.ko-grid-sort-icon { 
 	background-color:transparent; 
 	border:none;
 	display:inline-block; 
-	cursor:pointer;
+    vertical-align:middle;
 } 
