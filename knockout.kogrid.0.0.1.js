@@ -22,37 +22,7 @@
 		    	self = this,
 		    	_totalRows,
 		    	_ajax,
-		    	_sorting = ko.observableArray(),
-		    	_resizeHeaders = function(){    		
-						var 
-		    			heads = $("." + self.classes.head,self.element),
-		    			cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element),
-		    			h,c;
-		    			
-		    		if(heads.length != cells.length){
-		    			return;
-		    		}
-		    		
-		    		heads.parents().first().height(heads.first().height());
-		    		
-		    		for(var i = 0; i < heads.length; i++){
-		    			h = heads.eq(i);
-		    			c = cells.eq(i);
-		    			
-		    			h.css({
-		    				position: 'absolute',
-		    				top:0,
-		    				left: c.position().left,
-		    				width : c.width(),
-		    				float: "none",
-		    				overflow:"hidden",
-		    				"white-space" : "nowrap"
-		    			});
-		    		};					
-			    };
-	    	
-	    	// any time the window size changes, re-render the headers
-	    	windowSize.subscribe(_resizeHeaders);
+		    	_sorting = ko.observableArray();
 	    	
 	    	// for now, while dependant on jquery, use the jquery extend
 	    	$.extend(self,defaultOptions,viewModel);
@@ -63,23 +33,59 @@
 	    	self.total = makeObservable(self.total);
 	    	self.pageSize = makeObservable(self.pageSize);
 	    	self.pageIndex = makeObservable(self.pageIndex);
-	
+	        self.resizeHeaders = function(){    		
+				var 
+		    		heads = $("." + self.classes.head,self.element),
+		    		cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
+                        // map these values for easier debugging
+                        var self = $(this);
+                        return {
+                            left : self.position().left,
+                            width : self.width()
+                        };
+                    }),
+		    		h,c;
+		    	
+                // in order to resize, we want to make sure the number of headers matches the number of cells
+		    	if(heads.length != cells.length){
+		    		return;
+		    	}
+
+		    	// set the height of the head container to the height of the table headers	
+		    	heads.first().parent().height(heads.first().height());
+		    		
+		    	for(var i = 0; i < heads.length; i++){
+		    		h = heads.eq(i);
+		    		c = cells[i];
+		    			
+		    		h.css({
+		    			position: 'absolute',
+		    			top:0,
+                        // the minus one allows for the offset of collapsed table borders
+		    			left: c.left -1,
+		    			width : c.width,
+		    			float: "none",
+		    			overflow:"hidden",
+		    			"white-space" : "nowrap"
+		    		});
+		    	};					
+			};
 	    	self.afterRender = _.debounce(function(){
-					_resizeHeaders();
+				self.resizeHeaders();
 	    		
-	    		if(_.isFunction(self.renderComplete)){
-	    			self.renderComplete(element)
+	    		if(_.isFunction(self.done)){
+	    			self.done(element)
 	    		}
 	    	},100);
 
-				self.isColumnVisible = function($data){
-					if(ko.isObservable($data.visible))
-						return $data.visible();
-					else if(_.isBoolean($data.visible))
-						return $data.visible;
-					else 
-						return true;
-				};
+			self.isColumnVisible = function($data){
+				if(ko.isObservable($data.visible))
+					return $data.visible();
+				else if(_.isBoolean($data.visible))
+					return $data.visible;
+				else 
+					return true;
+			};
 				
 			self.sort = function (event) {
 
@@ -134,7 +140,6 @@
 			};
 
 			self.sortClass = function (column) {
-			    console.info("sorting class");
 			    var mySort = _.find(_sorting(), function (item, index) {
 			        return item.key === column.key;
 			    });
@@ -217,18 +222,23 @@
     	        maxPage = self.totalPages.peek();
     	    self.pageIndex(Math.min(maxPage,newPage + 1));
     	};
-			self.last = function () {
-			    self.pageIndex(self.totalPages.peek());
-			};
-			self.goToPage = function () {
-					var page = parseInt(self.goToPageText.peek());
-					if(_.isNumber(page) && page >= 1 && page <= self.totalPages.peek())
-			    	self.pageIndex(page);
-			    else 
-			    	self.goToPageText("");
-			};
+		self.last = function () {
+			self.pageIndex(self.totalPages.peek());
+		};
+		self.goToPage = function () {
+				var page = parseInt(self.goToPageText.peek());
+				if(_.isNumber(page) && page >= 1 && page <= self.totalPages.peek())
+			    self.pageIndex(page);
+			else 
+			    self.goToPageText("");
+		};
     	self.goToPageText = ko.observable();
 	    	
+            
+	    	// any time the window size changes, re-render the headers
+	    	windowSize.subscribe(self.resizeHeaders);
+	    	
+
 	    	// find all observables in 
 	    	(function sniff(val){
 	    		_.forOwn(val,function(item,key){
@@ -348,19 +358,19 @@
 		    	cssClass: "ko-grid-pager"
 		    },
 			  first : {
-		    	template : "<button type='button' data-bind='click : first' title='First'>&lt;&lt; First</button>",
+		    	template : "<button type='button' data-bind='click : first, disable : pageIndex() == 1' title='First'>&lt;&lt; First</button>",
 		    	cssClass: "ko-grid-first"
 		    },
 			  previous : {
-		    	template : "<button type='button' data-bind='click : previous' title='Previous'>&lt; Previous</button>",
+		    	template : "<button type='button' data-bind='click : previous, disable : pageIndex() == 1' title='Previous'>&lt; Previous</button>",
 		    	cssClass: "ko-grid-previous"
 		    },
 			  next : {
-		    	template : "<button type='button' data-bind='click : next' title='Next'>Next &gt;</button>",
+		    	template : "<button type='button' data-bind='click : next, disable : pageIndex() == totalPages()' title='Next'>Next &gt;</button>",
 		    	cssClass: "ko-grid-next"
 		    },
 			  last : {
-		    	template : "<button type='button' data-bind='click : last' title='Last'>Last  &gt;&gt;</button>",
+		    	template : "<button type='button' data-bind='click : last, disable : pageIndex() == totalPages()' title='Last'>Last  &gt;&gt;</button>",
 		    	cssClass: "ko-grid-last"
 		    },
 			  refresh  : {
@@ -417,15 +427,15 @@
             descendingClass: "ko-grid-sort-desc"
 	    };
 
-			$(window).on("resize",_.debounce(function(){
-				// there is a bug in IE8 that resizes the window any time the height of any cell changes its height or width dynamically
-				// this statement is here to ensure that the resizing the header does not go into an infinite loop
-				var newSize = { h	: $(window).height(), w : $(window).width() };
-				var oldSize = windowSize.peek(); 
-				if(newSize.h !== oldSize.h || newSize.w !== oldSize.w){
-					windowSize(newSize);
-				}
-			},100));
+	    $(window).on("resize",_.debounce(function(){
+		    // there is a bug in IE8 that resizes the window any time the height of any cell changes its height or width dynamically
+		    // this statement is here to ensure that the resizing the header does not go into an infinite loop
+		    var newSize = { h	: $(window).height(), w : $(window).width() };
+		    var oldSize = windowSize.peek(); 
+		    if(newSize.h !== oldSize.h || newSize.w !== oldSize.w){
+			    windowSize(newSize);
+		    }
+	    },100));
 		
 	  ko.bindingHandlers.kogrid = {
 	    init : function(element, valueAccessor){
@@ -487,13 +497,19 @@
 		    	});
 		    		
 		    	ko.applyBindingsToDescendants(viewModel,element);
+
+                // expose the grid utilities
+                value.utils = _.extend({},value.utils,{
+                    fixHeaders: viewModel.resizeHeaders,
+                    refresh: viewModel.refresh,
+                    goToPage: function(pageIndex){
+                        self.pageIndex(pageIndex);
+                    }
+                });
 		    });
 	    		
 	    	return { controlsDescendantBindings : true };
 	    }, 
-	    update : function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext){
-	    	// do data
-	    },
 		options : defaultOptions,
 		templates: templates,
 		sorting: sorting
