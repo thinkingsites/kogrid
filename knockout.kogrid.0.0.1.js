@@ -13,8 +13,46 @@
 			peekObservable = function(obs){
 				return ko.isObservable(obs) ? obs.peek() : obs;
 			},
+			windowSize = ko.observable({
+				h:  $(window).height(),
+				w: $(window).width()
+			}),
 	    ViewModel = function(viewModel,element,classes){
-	    	var self = this,_totalRows,_ajax,_sorting = ko.observableArray();
+	    	var 
+		    	self = this,
+		    	_totalRows,
+		    	_ajax,
+		    	_sorting = ko.observableArray(),
+		    	_resizeHeaders = function(){    		
+						var 
+		    			heads = $("." + self.classes.head,self.element),
+		    			cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element),
+		    			h,c;
+		    			
+		    		if(heads.length != cells.length){
+		    			return;
+		    		}
+		    		
+		    		heads.parents().first().height(heads.first().height());
+		    		
+		    		for(var i = 0; i < heads.length; i++){
+		    			h = heads.eq(i);
+		    			c = cells.eq(i);
+		    			
+		    			h.css({
+		    				position: 'absolute',
+		    				top:0,
+		    				left: c.position().left,
+		    				width : c.width(),
+		    				float: "none",
+		    				overflow:"hidden",
+		    				"white-space" : "nowrap"
+		    			});
+		    		};					
+			    };
+	    	
+	    	// any time the window size changes, re-render the headers
+	    	windowSize.subscribe(_resizeHeaders);
 	    	
 	    	// for now, while dependant on jquery, use the jquery extend
 	    	$.extend(self,defaultOptions,viewModel);
@@ -25,47 +63,23 @@
 	    	self.total = makeObservable(self.total);
 	    	self.pageSize = makeObservable(self.pageSize);
 	    	self.pageIndex = makeObservable(self.pageIndex);
-
+	
 	    	self.afterRender = _.debounce(function(){
-	    		var 
-	    			heads = $("." + self.classes.head,self.element),
-	    			cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element),
-	    			h,c;
-	    			
-	    		if(heads.length != cells.length){
-	    			return;
-	    		}
-	    		
-	    		heads.parents().first().height(heads.first().height());
-	    		
-	    		for(var i = 0; i < heads.length; i++){
-	    			h = heads.eq(i);
-	    			c = cells.eq(i);
-	    			
-	    			h.css({
-	    				position: 'absolute',
-	    				top:0,
-	    				left: c.position().left,
-	    				width : c.width(),
-	    				float: "none",
-	    				overflow:"hidden",
-	    				"white-space" : "nowrap"
-	    			});
-	    		};
+					_resizeHeaders();
 	    		
 	    		if(_.isFunction(self.renderComplete)){
 	    			self.renderComplete(element)
 	    		}
-	    	},10);
+	    	},100);
 
-			self.isColumnVisible = function($data){
-				if(ko.isObservable($data.visible))
-					return $data.visible();
-				else if(_.isBoolean($data.visible))
-					return $data.visible;
-				else 
-					return true;
-			};
+				self.isColumnVisible = function($data){
+					if(ko.isObservable($data.visible))
+						return $data.visible();
+					else if(_.isBoolean($data.visible))
+						return $data.visible;
+					else 
+						return true;
+				};
 				
 			self.sort = function (event) {
 
@@ -246,6 +260,7 @@
                     pageIndex = self.pageIndex.peek(),
                     pageSize = self.pageSize.peek(),
                     paging = _.isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
+                    serverData = peekObservable(self.data),
                     ajaxSorting = {};
 	    	        ajaxSorting[sorting.sortColumn] = _.map(_sorting.peek(),function(item){
 	    	            return item.key;
@@ -257,7 +272,7 @@
                     // do ajax
 	    	        return $.ajax({
 	    	            url: self.url,
-	    	            data: _.extend(paging, ajaxSorting, self.data),
+	    	            data: _.extend(paging, ajaxSorting, serverData),
 	    	            type: self.type || 'get',
 	    	            dataType: self.dataType || 'json',
 	    	        }).done(function (ajaxResult) {
@@ -275,6 +290,9 @@
                     .promise(); 
 	    	    };
 
+	    	    if(ko.isObservable(self.data)){
+                    self.data.subscribe(self.refresh);
+                }
 	    	    self.pageIndex.subscribe(self.refresh);
 	    	    self.pageSize.subscribe(self.refresh);
 	    	    self.refresh();
@@ -398,7 +416,17 @@
 	        ascendingClass : "ko-grid-sort-asc",
             descendingClass: "ko-grid-sort-desc"
 	    };
-	
+
+			$(window).on("resize",_.debounce(function(){
+				// there is a bug in IE8 that resizes the window any time the height of any cell changes its height or width dynamically
+				// this statement is here to ensure that the resizing the header does not go into an infinite loop
+				var newSize = { h	: $(window).height(), w : $(window).width() };
+				var oldSize = windowSize.peek(); 
+				if(newSize.h !== oldSize.h || newSize.w !== oldSize.w){
+					windowSize(newSize);
+				}
+			},100));
+		
 	  ko.bindingHandlers.kogrid = {
 	    init : function(element, valueAccessor){
 	    	$(function(){
