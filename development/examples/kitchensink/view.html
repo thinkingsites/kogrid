@@ -1,0 +1,12 @@
+﻿<div id="data-grid-container">
+	<div>
+		<strong>Selected Columns</strong><br>
+		<!-- ko foreach : columns -->
+			<input type='checkbox' data-bind='checked : _.isUndefined($data.visible)? true : $data.visible , enable: ko.isObservable($data.visible)' >
+			<label data-bind='text:title'></label>
+		<!-- /ko -->
+		</select>
+	</div>
+			
+	<div id="datagrid" data-bind="kogrid : $data"></div>	
+</div>

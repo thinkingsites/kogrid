@@ -1,4 +1,4 @@
-﻿(function ($) {
+﻿define(["jquery","mockjax"],function ($) {
     window.ajaxData = _.sortBy(window.ajaxData, 'name');
 
     $.mockjax(function (settings) {
@@ -39,4 +39,4 @@
             }
         };
     });
-} (jQuery));
+});

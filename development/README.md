@@ -1,20 +1,20 @@
 kogrid
 ======
 
-**kogrid** is intended to be a grid fully implemented in knockout with full support for observables.  As of this version only some of the variables support observables and are marked *observable* or *observableArray*.
+**kogrid** is intended to be a grid fully implemented in knockout with full support for observables.  Most of the **options** support observables and are marked *observable* or *observableArray* within this documentation.
 
-Columns are ordered by likely frequency of use.
+Columns are ordered by likelihood of use.
 
 <h1>Documentation</h1>
 * <h2>Options</h2> - These are the settings that are individually configurable on the grid.  The global option **defaultOptions** are also available to be set individually per grid as grid **Options**. 
     * **url** - *string, observable, conditionally required* - The url where the data will be summoned from.  If set to an observable the grid will refresh whenever the observable changes.  This is conditionally required; either this or the **data** property are required.</li>
-    * <h3>columns</h3> - *array, observableArray, optional* - The column definitions.  If this is an observable, the rendered columns can be changed dynamically.
+    * **columns** - *array, observableArray, optional* - The column definitions.  If this is an observable, the rendered columns can be changed dynamically.
         * **title** - *string, observable, optional* -  The header text for the column.  If not provided the **key** will be used as the column header.
         * **template** - *string, observable, optional* - A string for the templateID to use or an html template.  If not defined the column will use a default text template.
         * **key** - *string, observable, optional* - The key for the data to be displayed.  If not provided it is assumed that there is a dynamic template for the column instead of displaying a single data element.
-        * **css** - *object or string, observable, optional* - Binds to the cell's knockout css binding and follows all the same rules. [Knockout Css Binding](http://knockoutjs.com/documentation/css-binding.html)
-        * **style** - *object, observable, optional* - Binds to the cell's knockout style binding and follows all the same rules. [Knockout Style Binding](http://knockoutjs.com/documentation/style-binding.html)
-        * **visible** - *boolean, observable, optional* - Binds to the cell's knockout visible binding and follows all the same rules. [Knockout Visible Binding](http://knockoutjs.com/documentation/visible-binding.html)        
+        * **css** - *object or string, observable, optional* - Binds to the cell's knockout css binding and follows all the same rules. <a href="http://knockoutjs.com/documentation/css-binding.html" target="_blank">Knockout Css Binding</a>
+        * **style** - *object, observable, optional* - Binds to the cell's knockout style binding and follows all the same rules. <a href="http://knockoutjs.com/documentation/style-binding.html" target="_blank">Knockout Style Binding</a>
+        * **visible** - *boolean, observable, optional* - Binds to the cell's and header's knockout <code>visible</code> binding and follows all the same rules. <a href="http://knockoutjs.com/documentation/visible-binding.html" target="_blank">Knockout Visible Binding</a> 
 		* **data**- *object, observable, optional* - Extra data to pass into each grid cell, available as part of the **template** *$data*.  This object is merged with the row data and functions added to this object will have the row data bound to the *this* function keyword.
     * **rows** - *array of objects, observable, conditionally required* - If **url** is not used, the row data can be passed in directly through this variable.
     * **total** - *integer, observable, optional* If **url** is not used, the total number of rows can be passed in directly, otherwise will default to the current number of rows in **rows**.
