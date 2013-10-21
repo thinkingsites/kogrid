@@ -1,0 +1,16 @@
+﻿@line-height:16px;
+#documentation 
+{
+	strong { font-weight:bold; }
+	em { font-style:italic; font-family:courier,serif; }
+	h1,h2,h3,p { margin-top:@line-height;}
+	li { 
+		margin-top:8px;
+		& > h1,h2,h3 {
+			&:first-child { margin-top:0; }
+			display:inline-block;
+		}
+	}
+	ul { list-style-type:circle; }
+	code { font-family:courier,serif; color:green; }
+}

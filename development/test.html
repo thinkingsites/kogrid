@@ -2,51 +2,66 @@
 	<head>
 		<link rel="stylesheet" href="reset.css"/>
 		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
-		<link rel="stylesheet" href="knockout.kogrid.0.0.1.css"/>        
+		<link rel="stylesheet" href="knockout.kogrid.css"/>        
+		<link rel="stylesheet/less" href="readme.less"/>        
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js" type="text/javascript"></script>
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js" type="text/javascript"></script>
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min.js" type="text/javascript"></script>	
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js" type="text/javascript"></script>	
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min.js" type="text/javascript"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter.js" type="text/javascript"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min.js" type="text/javascript"></script>
 		<script src="mockjax.data.js" type="text/javascript"></script>
 		<script src="mockjax.settings.js" type="text/javascript"></script>
-		<script src="knockout.kogrid.0.0.1.js" type="text/javascript"></script>
+		<script src="knockout.kogrid.js" type="text/javascript"></script>
 		<script type="text/javascript">
 		    $(function () {
-		        ko.bindingHandlers.kogrid.sorting.noSortClass += " ui-icon ui-icon-triangle-2-n-s";
-		        ko.bindingHandlers.kogrid.sorting.ascendingClass += " ui-icon ui-icon-triangle-1-n";
-		        ko.bindingHandlers.kogrid.sorting.descendingClass += " ui-icon ui-icon-triangle-1-s";
-				window.viewModel = {
-				    url : 'sampledata',
-				    columns: ko.observableArray([
+		        window.viewModel = {
+		            url: 'sampledata',
+		            columns: ko.observableArray([
 						{
 						    title: "ID",
 						    template: "<input type='checkbox' data-bind='checked : isChecked()'/>",
 						    data: {
-							    isChecked: function () {
-							        return Math.ceil(Math.random() * 10) > 5;
-							    }
+						        isChecked: function () {
+						            return Math.ceil(Math.random() * 10) > 5;
+						        }
 						    },
-						    style : { width : "50px", "text-align" : "center" },
-						    css : "orange"
+						    style: { width: "50px", "text-align": "center" },
+						    css: "orange"
 						},
-						{ title: "Name", key: "name", css : "hover" },
-						{ title : "Occupation", key : "occupation" },
-						{ title : "Address", key : "address" },
-						{ title : "City", key : "city", sortable : true },
-						{ title : "State", key : "state", sortable : true },
-						{ title : "ZipCode", key : "zipcode", sortable : true },
-						{ title : "Phone", key : "phone", visible : ko.observable(false) },
-						{ title : "Status", key : "status", visible : ko.observable(false) },
-						{ title : "Age", key : "age", style : { width : "50px", "text-align" : "center" }, visible : ko.observable(false) }
+						{ title: "Name", key: "name", css: "hover" },
+						{ title: "Occupation", key: "occupation" },
+						{ title: "Address", key: "address" },
+						{ title: "City", key: "city", sortable: true },
+						{ title: "State", key: "state", sortable: true },
+						{ title: "ZipCode", key: "zipcode", sortable: true },
+						{ title: "Phone", key: "phone", visible: ko.observable(false) },
+						{ title: "Status", key: "status", visible: ko.observable(false) },
+						{ title: "Age", key: "age", style: { width: "50px", "text-align": "center" }, visible: ko.observable(false) }
 				    ]),
-				    renderComplete : function(element){
-				    	$(".ko-grid-pager button",element).css({ "background-color" : "pink" });
-				    }
-				};
-				
-				ko.applyBindings(window.viewModel,$("#data-grid-container")[0]);
-			});
+		            renderComplete: function (element) {
+		                $(".ko-grid-pager button", element).css({ "background-color": "pink" });
+		            }
+		        };
+
+		        ko.applyBindings(window.viewModel, $("#data-grid-container")[0]);
+
+		        $.ajax({
+		            url: "readme.md",
+		            type: "get",
+		            dataType: "text"
+		        }).done(function (markdown) {
+		            try {
+		                var converter = new Markdown.Converter();
+		                $("#documentation").html(converter.makeHtml(markdown));
+		            } catch (e) {
+		                console.error(markdown);
+		                console.error(e);
+		                $("#documentation").html("<div style='color:red;text-align:center;font-size:20px;'>Documentation did not load.</div>")
+		            }
+		        });
+		    });
 		</script>
         <style>
             h1,h2,h3,h4,h5,h6 { font-weight:bold; }
@@ -82,37 +97,6 @@
 		
 		<br/><br/>
 		<hr/>
-		<h1>Documentation</h1>
-		<ul>
-            <li>
-                <h2>Options</h2>
-                <ul>
-                    <li>url</li>
-                    <li>
-                        <h3>columns</h3>
-                        <ul>
-                            <li>title the header for the column</li>
-                            <li>template - a knockout template</li>
-                            <li>key</li>
-                            <li>css - pass css classes as a string into a column </li>
-                            <li>style - pass in fixed styles into a column </li>
-                            <li>visible - boolean on whether a column is hidden or not </li>
-                            <li>data - extra data to pass into each grid cell, available as part of the template $data.  functions can be added here.  the 'this' parameter is the row data item</li>
-                        </ul>
-                    </li>
-                    <li>rows - if url is not used, the row data can be passed in directly</li>
-                    <li>total - if url is not used the total number of rows can be passed in directly</li>
-                    <li>done - will be fired after the grid has been rendered, will fire any time rows are reloaded</li>
-                </ul>
-            </li>
-            <li>
-                <h2>Global Settings - ko.bindingHandlers.kogrid</h2>
-                <ul>
-                    <li>defaultOptions</li>
-                    <li>templates</li>
-                    <li>sorting</li>
-                </ul>
-            </li>
-		</ul>
+        <div id="documentation"></div>
 	</body>
 </html>
