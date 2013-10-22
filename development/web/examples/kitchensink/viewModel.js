@@ -1,6 +1,7 @@
 ﻿define(["knockout","mockjax.settings"], function (ko) {
     var viewmodel = {
         url: 'sampledata',
+        height: "300px",
         columns: ko.observableArray([
 						{
 						    title: "ID",

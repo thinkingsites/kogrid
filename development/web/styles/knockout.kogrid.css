@@ -1,5 +1,6 @@
 .ko-grid-main {
 	position:relative;
+	overflow:hidden;
 }
 
 .ko-grid-head { 
@@ -12,7 +13,7 @@
 }
 
 .ko-grid-head-container{
-	background: #ebf1f6; /* Old browsers */
+	background: #ebf1f6;
 	border:solid 1px black;
 }
 

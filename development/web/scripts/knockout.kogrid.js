@@ -34,53 +34,69 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				h:  $(window).height(),
 				w: $(window).width()
 			}),
-	        generateRandomId = function(){
-	            return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
-	        },
-	        addElement = function(appendTo,key,css){
-		        // use jquery for ease of use for now until you can move away from it and use plain JS
-	    	    var 
-	    		    nodeDescription = templates[key],
-	    		    result = $(nodeDescription.template).appendTo(appendTo);
-	    		
-	    	    if(nodeDescription.cssClass){
-		    	    result.addClass(nodeDescription.cssClass)
-		        }
-		    
-		        if(css){
-		    	    result.css(css);
-		        }
-		    
-		        return result;
-	        },
-            appendjQueryUISortingIcons = function(options){
-                
-                // if the sorting icons have been set explicitly to false, leave
-                if(options.addjQueryUiSortingIcons === false)
-                    return;
+      generateRandomId = function(){
+      	return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
+      },
+      addElement = function(appendTo,key,css){
+        // use jquery for ease of use for now until you can move away from it and use plain JS
+  	    var 
+  		    nodeDescription = templates[key],
+  		    result = $(nodeDescription.template).appendTo(appendTo);
+  		
+  	    if(nodeDescription.cssClass){
+    	    result.addClass(nodeDescription.cssClass)
+        }
+    
+        if(css){
+    	    result.css(css);
+        }
+    
+        return result;
+      },
+      appendjQueryUISortingIcons = function(options){
+          
+          // if the sorting icons have been set explicitly to false, leave
+          if(options.addjQueryUiSortingIcons === false) {
+            return;
+          }
 
-                var 
-                    selectors = [
-                        "ui-icon",
-                        "ui-icon-triangle-2-n-s",
-                        "ui-icon-triangle-1-n",
-                        "ui-icon ui-icon-triangle-1-s"
-                    ],
-                    // if the sorting icons have been set explicitly to true, force the addition
-                    forceAdd = options.addjQueryUiSortingIcons === true,
-                    // sniff out whether jQuery UI exists
-                    jQueryUiExists = $.ui || _.any(document.styleSheets,function(stylesheet){
-                        return _(stylesheet.rules).map(function(rule){
-                            return rule.selectorText.slice(1);
-                        }).intersection(jquiStyles).value().length == selectors.length;
-                    });
+          var 
+            selectors = [
+              "ui-icon",
+              "ui-icon-triangle-2-n-s",
+              "ui-icon-triangle-1-n",
+              "ui-icon ui-icon-triangle-1-s"
+            ],
+            // if the sorting icons have been set explicitly to true, force the addition
+            forceAdd = options.addjQueryUiSortingIcons === true,
+            // sniff out whether jQuery UI exists
+            jQueryUiExists = $.ui || _.any(document.styleSheets,function(stylesheet){
+              return _(stylesheet.rules).map(function(rule){
+                  return rule.selectorText.slice(1);
+              }).intersection(jquiStyles).value().length == selectors.length;
+            });
 
-                if(forceAdd || jQueryUiExists){
-		            options.sorting.noSortClass += [undefined,selectors[0],selectors[1]].join(" ");
-		            options.sorting.ascendingClass += [undefined,selectors[0],selectors[2]].join(" ");
-		            options.sorting.descendingClass += [undefined,selectors[0],selectors[3]].join(" ");
-                }
-            },
+          if(forceAdd || jQueryUiExists){
+            options.sorting.noSortClass += [undefined,selectors[0],selectors[1]].join(" ");
+            options.sorting.ascendingClass += [undefined,selectors[0],selectors[2]].join(" ");
+            options.sorting.descendingClass += [undefined,selectors[0],selectors[3]].join(" ");
+          }
+      },
+      sizeGridContainer = function(element,height){
+     		var 
+     			elem = $(element),
+     			height = parseInt(height) || height,
+     			scrollContainer = $("." + templates.scrollContainer.cssClass,elem),
+     			headerHeight = $("." + templates.headContainer.cssClass,elem).outerHeight(),
+     			pagerHeight = $("." + templates.pager.cssClass,elem).outerHeight();
+     		
+     		elem.css("height",height);
+     		if(height !== "auto" && height !== "inherit"){
+     			scrollContainer.css("height",elem.innerHeight() - headerHeight - pagerHeight);
+	   		} else {
+   				scrollContainer.css("height",height);
+   			}
+      },
 	    ViewModel = function(viewModel,element,classes){
 	    	var 
 		    	self = this,
@@ -93,6 +109,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	self.element = element;
 	    	self.templates = {};
 	    	self.classes = classes;
+	    	self.height = makeObservable(self.height);
 	    	self.rows = makeObservable(self.rows);
 	    	self.total = makeObservable(self.total);
 	    	self.pageSize = makeObservable(self.pageSize);
@@ -139,8 +156,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	};					
 			};
 	    	self.afterRender = _.debounce(function(){
-				self.resizeHeaders();
-	    		
+					self.resizeHeaders();
+	    		sizeGridContainer(self.element,self.height.peek());
 	    		if(_.isFunction(self.done)){
 	    			self.done(element)
 	    		}
@@ -372,6 +389,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	    self.pageSize.subscribe(self.refresh);
 	    	    self.refresh();
 	    	}
+	    	
+	    	self.height.subscribe(function(newVal){
+	    		sizeGridContainer(self.element,newVal);
+	    	});
 	    },
 	    cellTemplateId = 'ko-grid-default-cell-template',
 	    defaultOptions = {
@@ -456,11 +477,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	template : "<select data-bind='options : pageSizeOptions, value : pageSize'></select>",
 		    	cssClass: "ko-grid-page-size"
 		    },
-			goToPage : {
+				goToPage : {
 		    	template : "<div><input type='text' data-bind='value : goToPageText'><button data-bind='click : goToPage'>Go</button></div>",
 		    	cssClass: "ko-grid-go-to-page"
 		    },
-			pagingText :{
+				pagingText :{
 		    	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: totalPages'></span></div>",
 		    	cssClass: "ko-grid-paging-text"
 		    },
@@ -507,7 +528,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		columns = ko.isObservable(viewModel.columns) ? viewModel.columns.peek() : viewModel.columns,
 		    		
 			    	// create html for header and body
-		    		elem = $(element).addClass(myClasses.main),
+		    		elem = $(element).addClass("ko-grid-main").css({ height : viewModel.height.peek() }),
 		    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
 		    		head = addElement(headContainer,'head'),
 		    		sortIcon = addElement(head, 'sortIcon'),
@@ -552,14 +573,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 		    	ko.applyBindingsToDescendants(viewModel,element);
 
-                // expose the grid utilities
-                value.utils = _.extend({},value.utils,{
-                    fixHeaders: viewModel.resizeHeaders,
-                    refresh: viewModel.refresh,
-                    goToPage: function(pageIndex){
-                        self.pageIndex(pageIndex);
-                    }
-                });
+          // expose the grid utilities
+          value.utils = _.extend({},value.utils,{
+              fixHeaders: viewModel.resizeHeaders,
+              refresh: viewModel.refresh,
+              goToPage: function(pageIndex){
+                  self.pageIndex(pageIndex);
+              }
+          });
 		    });
 	    		
 	    	return { controlsDescendantBindings : true };
