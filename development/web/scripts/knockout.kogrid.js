@@ -97,7 +97,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	self.total = makeObservable(self.total);
 	    	self.pageSize = makeObservable(self.pageSize);
 	    	self.pageIndex = makeObservable(self.pageIndex);
-	        self.resizeHeaders = function(){    		
+	    	self.any = function(){
+	    	var r = getObservable(self.rows);
+	    		return !(_.isUndefined(r) || r.length == 0);
+	    	};
+	      self.resizeHeaders = function(){    		
 				var 
 		    		heads = $("." + self.classes.head,self.element),
 		    		cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
@@ -158,19 +162,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			        return;
 
 			    var
-                    column = this,
-                    appendSort =
-                    // find the existing
-                    _.find(_sorting.peek(), function (item, index) {
-                        return item.key === column.key;
-                    }) || {
-                        // 
-                        key: column.key,
-                        direction: column.direction
-                    },
-                    sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
-			            return item.key != column.key;
-			        });
+              column = this,
+              appendSort =
+              // find the existing
+              _.find(_sorting.peek(), function (item, index) {
+                  return item.key === column.key;
+              }) || {
+                  key: column.key,
+                  direction: column.direction
+              },
+              sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
+	            return item.key != column.key;
+	        });
 
 			    if (appendSort.direction === self.sorting.asc) {
 			        appendSort.direction = self.sorting.desc;
@@ -298,7 +301,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		};
     	self.goToPageText = ko.observable();
 	    	
-            
 	    	// any time the window size changes, re-render the headers
 	    	windowSize.subscribe(self.resizeHeaders);
 	    
@@ -322,7 +324,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	if (_.isString(self.url)) {
 	    	    self.refresh = function () {
 
-                    // if there is a loading function, fire it
+                // if there is a loading function, fire it
 	    	        if (_.isFunction(self.loading)) {
                         // pass in the element and the old rows
 	    	            self.loading(self.element,self.rows.peek());
@@ -384,17 +386,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    loaded: function (element) {
 		        $("table", element).css({ opacity: 1 });
 		    },
-	        sorting : {
-                allowMultiSort : false,
-                sortColumn : "sortColumn",
-	            sortDirection : "sortDirection",
-	            asc: "asc",
-	            desc: "desc",
-	            noSortClass: "ko-grid-sort-none",
-	            ascendingClass : "ko-grid-sort-asc",
-                descendingClass: "ko-grid-sort-desc",
-                addjQueryUiSortingIcons : "auto"
-	        }
+		    noRowsText : "No rows available",
+        sorting : {
+          allowMultiSort : false,
+          sortColumn : "sortColumn",
+          sortDirection : "sortDirection",
+          asc: "asc",
+          desc: "desc",
+          noSortClass: "ko-grid-sort-none",
+          ascendingClass : "ko-grid-sort-asc",
+          descendingClass: "ko-grid-sort-desc",
+          addjQueryUiSortingIcons : "auto"
+        }
 	    },
 	    templates = {
 		    headContainer : {
@@ -414,7 +417,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	cssClass: "ko-grid-scroll-container"
 		    },
 		    table : {
-		    	template : "<table cellspacing='0' cellpadding='0'><tbody data-bind='foreach : { data : rows, afterRender : $root.afterRender }'></tbody></table>",
+		    	template : "<table cellspacing='0' cellpadding='0' data-bind='visible : any'><tbody data-bind='foreach : { data : rows, afterRender : $root.afterRender }'></tbody></table>",
 		    	cssClass: "ko-grid-table"
 		    },
 		    row : {
@@ -465,6 +468,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	template : "<div><span data-bind='text:total'></span> records</div>",
 		    	cssClass: "ko-grid-total-text"
 		    },
+			  noRows :{
+		    	template : "<div data-bind='visible : !any(), text : $root.noRowsText'></div>",
+		    	cssClass: "ko-grid-no-rows"
+		    },
 		    cellContentTemplate : {
 		    	template : "<script type='text/html' id='" + cellTemplateId + "'><!-- ko text: $data --><!-- /ko --></script>"
 		    }
@@ -505,6 +512,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		head = addElement(headContainer,'head'),
 		    		sortIcon = addElement(head, 'sortIcon'),
 		    		scrollContainer = addElement(elem,'scrollContainer'), 
+		    		table = addElement(scrollContainer,'noRows'),
 		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
 		    		rows = addElement(table,'row'),
 		    		cells = addElement(rows,'cell'),
