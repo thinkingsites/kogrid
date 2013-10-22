@@ -32,6 +32,7 @@ Columns are ordered by likelihood of use.
 		* **height** - *string or integer, optional* - The default height of the grid. Initially set to <code>auto</code>. 
 		* **loading** - *function, optional* - A function to fire before data is to be loaded onto the screen.  Initially set to dim the opacity of the table to 0\.5\.
 		* **loaded** - *function, optional* - A function to fire after data has been rendered onto the screen.  Initially set to restore the opacity of the table to 1\.
+		* **noRowsText** - *string, required* - The text to display when there are no rows to display. Initially set to <code>"No rows available."</code>
 		* **sorting** - *object, required*
 			* **allowMultiSort** - *boolean,required* - Initally set to <code>false</code>
 			* **sortColumn**  - *string, required* -  Initally set to <code>"sortColumn"</code>
