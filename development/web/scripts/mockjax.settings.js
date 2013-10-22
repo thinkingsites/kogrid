@@ -1,6 +1,5 @@
-﻿define(["jquery","mockjax"],function ($) {
-    window.ajaxData = _.sortBy(window.ajaxData, 'name');
-
+﻿define(["jquery","scripts/mockjax.data","mockjax"],function ($,ajaxData) {
+    ajaxData = _.sortBy(ajaxData, 'name');
     $.mockjax(function (settings) {
 
         // if the url is not for the sample data, return the actual ajax call
@@ -14,7 +13,7 @@
         _.each(query.match(/\w+=\d+/g), function (item) {
             params[item.match(/\w+/).toString()] = parseInt(item.match(/\d+/));
         });
-        var results = window.ajaxData;
+        var results = _.clone(ajaxData);
 
         if (settings.data) {
             if (settings.data.sortColumn) {
@@ -34,7 +33,7 @@
         return {
             contentType: 'text/json',
             responseText: {
-                total: window.ajaxData.length,
+                total: ajaxData.length,
                 rows: results
             }
         };

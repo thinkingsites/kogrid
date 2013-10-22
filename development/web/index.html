@@ -1,26 +1,27 @@
 <html>
 	<head>
-		<link rel="stylesheet" href="reset.css"/>
+		<link rel="stylesheet" href="styles/reset.css"/>
 		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
-		<link rel="stylesheet" href="knockout.kogrid.css"/>        
-		<link rel="stylesheet/less" href="readme.less"/>
+		<link rel="stylesheet" href="styles/knockout.kogrid.css"/>        
+		<link rel="stylesheet/less" href="styles/readme.less"/>
         <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.8/require.min.js"></script>
         <script type="text/javascript">
             // create all my paths
             var paths = {
-                text : "http://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.10/text",
-                jquery: "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
-                jqueryui : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
-                _ : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
-                knockout : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min",
-                mockjax : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
-                markdown : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
-                lesscss : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
-                mockjaxSettings : "mockjax.settings",
-                kogrid : "knockout.kogrid"
+                "text" : "http://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.10/text",
+                "jquery": "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
+                "jqueryui" : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
+                "_" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
+                "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min",
+                "mockjax" : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
+                "markdown" : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
+                "lesscss" : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
+                "mockjax.settings" : "scripts/mockjax.settings",
+                "kogrid" : "scripts/knockout.kogrid"
             };
 
             require.config({
+            		basePath : "/",
                 paths: paths,
                 shim : {
                     jqueryui : ["jquery"],
@@ -37,21 +38,24 @@
                 }())
             });
 
-            require(["jquery","jqueryui"],function(){
-                $(function () {
-                    // set up tabs
+            require(["jquery","knockout","jqueryui"],function($,ko){
+              $(function () {
+                  // set up tabs
 		            $("#tabs").tabs({
-                        create : function(e,ui) {
-                            var href = $("a",ui.tab).attr("href");
-                            require(["text!examples/" + href + "/view.html","examples/" + href + "/viewmodel"],function(html,viewmodel){
-                                ui.panel.html(html);
-                                ko.applyBindings(viewmodel,ui.panel[0]);
-                            });
-                            return false;
-                        }
+		            	  beforeLoad: function (event, ui) {
+					            if(ui.panel.is(":empty"))
+					            {
+                         	var href = $("a",ui.tab).attr("href");
+                          require(["text!examples/" + href + "/view.html","examples/" + href + "/viewmodel"],function(html,viewmodel){
+                              ui.panel.html(html);
+                              ko.applyBindings(viewmodel,ui.panel[0]);
+                          });
+					            }
+					            return false;
+					        }
 		            });
 
-                    // load documentation
+                // load documentation
 		            $.ajax({
 		                url: "readme.md",
 		                type: "get",
@@ -66,8 +70,8 @@
 		                    $("#documentation").html("<div style='color:red;text-align:center;font-size:20px;'>Documentation did not load.</div>")
 		                }
 		            });
-		        });
-            });
+	        		});
+        		});
 		</script>
         <style>
             h1,h2,h3,h4,h5,h6 { font-weight:bold; }

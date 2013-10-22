@@ -1,4 +1,4 @@
-﻿define(["mockjax.settings"], function () {
+﻿define(["knockout","mockjax.settings"], function (ko) {
     var viewmodel = {
         url: 'sampledata',
         columns: ko.observableArray([
@@ -22,11 +22,11 @@
 						{ title: "Phone", key: "phone", visible: ko.observable(false) },
 						{ title: "Status", key: "status", visible: ko.observable(false) },
 						{ title: "Age", key: "age", style: { width: "50px", "text-align": "center" }, visible: ko.observable(false) }
-				    ]),
+				]),
         renderComplete: function (element) {
             $(".ko-grid-pager button", element).css({ "background-color": "pink" });
         }
     };
 
-    ko.applyBindings(viewmodel, $("#data-grid-container")[0]);
+    return viewmodel;
 });
