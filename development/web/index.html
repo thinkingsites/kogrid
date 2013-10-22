@@ -4,74 +4,121 @@
 		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
 		<link rel="stylesheet" href="styles/knockout.kogrid.css"/>        
 		<link rel="stylesheet/less" href="styles/readme.less"/>
-        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.8/require.min.js"></script>
-        <script type="text/javascript">
-            // create all my paths
-            var paths = {
-                "text" : "http://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.10/text",
-                "jquery": "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
-                "jqueryui" : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
-                "_" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
-                "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min",
-                "mockjax" : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
-                "markdown" : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
-                "lesscss" : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
-                "mockjax.settings" : "scripts/mockjax.settings",
-                "kogrid" : "scripts/knockout.kogrid"
-            };
+		<style type="text/css">
+			#tabs > ul {
+				float:left;
+				width:220px;
+				padding:0;
+				margin:0;
+			}
+			#tabs > div {
+				margin-left:220px;
+			}
+			#tabs > ul a{
+				border:solid 1px #666;
+				background-color:#eee;
+				width:180px;
+				margin-bottom:10px;
+				padding:5px;
+				display:block;
+				text-decoration:none;
+				font-size:16px;
+				-webkit-border-radius:5px;
+				border-radius:5px;
+				color:black;
+				font-weight:bold;
+			}
+			
+			#tabs > ul a.active,
+			#tabs > ul a:hover{
+				background-color:#FFCC66;
+			}
+			
+			#documentation {
+				margin-top:20px;
+				clear:both;
+				border-top:solid 3px black;
+			}
+		</style>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.8/require.min.js"></script>
+    <script type="text/javascript">
+        // create all my paths
+        var paths = {
+            "text" : "http://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.10/text",
+            "jquery": "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
+            "jqueryui" : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
+            "_" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
+            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min",
+            "mockjax" : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
+            "markdown" : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
+            "lesscss" : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
+            "mockjax.settings" : "scripts/mockjax.settings",
+            "kogrid" : "scripts/knockout.kogrid"
+        };
 
-            require.config({
-            		basePath : "/",
-                paths: paths,
-                shim : {
-                    jqueryui : ["jquery"],
-                    mockjax : {
-                         deps: ['jquery',"_"],
-                         exports: 'jQuery.fn.mockjax'
-                    },
+        require.config({
+        		basePath : "/",
+            paths: paths,
+            shim : {
+                jqueryui : ["jquery"],
+                mockjax : {
+                     deps: ['jquery',"_"],
+                     exports: 'jQuery.fn.mockjax'
                 },
-                // dynamically load all paths as dependancies
-                deps: (function () {
-                    var keys = [];
-                    for (var k in paths) keys.push(k);
-                    return keys;
-                }())
+            },
+            // dynamically load all paths as dependancies
+            deps: (function () {
+                var keys = [];
+                for (var k in paths) keys.push(k);
+                return keys;
+            }())
+        });
+
+        require(["jquery","knockout","jqueryui"],function($,ko){
+          $(function () {
+            // set up tabs
+						$("#tabs > ul a").on("click",function(){
+							var 
+								self = $(this),
+								id = self.attr("href").slice(1),
+								panel = $("#" + id);
+							if(panel.length == 0) {
+								$("#tabs > ul a.active").removeClass(".active");
+								$("#tabs > div").hide();
+								self.addClass("active");
+								
+								panel = $("<div></div>").attr("id",id).appendTo("#tabs");
+								require(["text!examples/" + id + "/view.html","examples/" + id + "/viewmodel"],function(html,viewmodel){
+									panel.html(html);
+									ko.applyBindings(viewmodel,panel[0]);
+								});
+							} else if(panel.is(":hidden")){
+								$("#tabs > ul a.active").removeClass(".active");
+								$("#tabs > div").hide();
+								self.addClass("active");
+								panel.show();
+							}
+							
+							return false;
+						}).first().trigger("click");
+						
+            // load documentation
+            $.ajax({
+                url: "readme.md",
+                type: "get",
+                dataType: "text"
+            }).done(function (markdown) {
+                try {
+                    var converter = new Markdown.Converter();
+                    $("#documentation").html(converter.makeHtml(markdown));
+                } catch (e) {
+                    console.error(markdown);
+                    console.error(e);
+                    $("#documentation").html("<div style='color:red;text-align:center;font-size:20px;'>Documentation did not load.</div>")
+                }
             });
-
-            require(["jquery","knockout","jqueryui"],function($,ko){
-              $(function () {
-                  // set up tabs
-		            $("#tabs").tabs({
-		            	  beforeLoad: function (event, ui) {
-					            if(ui.panel.is(":empty"))
-					            {
-                         	var href = $("a",ui.tab).attr("href");
-                          require(["text!examples/" + href + "/view.html","examples/" + href + "/viewmodel"],function(html,viewmodel){
-                              ui.panel.html(html);
-                              ko.applyBindings(viewmodel,ui.panel[0]);
-                          });
-					            }
-					            return false;
-					        }
-		            });
-
-                // load documentation
-		            $.ajax({
-		                url: "readme.md",
-		                type: "get",
-		                dataType: "text"
-		            }).done(function (markdown) {
-		                try {
-		                    var converter = new Markdown.Converter();
-		                    $("#documentation").html(converter.makeHtml(markdown));
-		                } catch (e) {
-		                    console.error(markdown);
-		                    console.error(e);
-		                    $("#documentation").html("<div style='color:red;text-align:center;font-size:20px;'>Documentation did not load.</div>")
-		                }
-		            });
-	        		});
-        		});
+      		});
+    		});
 		</script>
         <style>
             h1,h2,h3,h4,h5,h6 { font-weight:bold; }
@@ -94,7 +141,7 @@
 	<body style="margin:20px;font-size:12px;font-family:sans-serif;">
         <div id="tabs">
             <ul>
-                <li><a href="KitchenSink">Kitchen Sink</a></li>
+                <li><a href="#KitchenSink">Kitchen Sink</a></li>
             </ul>
         </div>
         <div id="documentation"></div>
