@@ -96,8 +96,9 @@ minifyTo(kogridCssPath,path.join(releasePath,kogridCssMinFileName));
 // delete files from main folder
 fs.readdirSync(mainPath).forEach(function(item){
 	var p = path.join(mainPath,item);
-	if(fs.existsSync(p)){
-		var stats = fs.statSync(p);
+	var stats = fs.statSync(p);
+	if(stats.isFile()){
+		console.info("Deleting " + p);
 		fs.unlinkSync(p);
 	}	
 });

@@ -37,7 +37,6 @@
 
 .ko-grid-scroll-container {
 	overflow-y:scroll;
-	height:500px;
 	border-left:solid 1px black;
 	border-right:solid 1px black;
 }
