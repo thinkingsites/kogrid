@@ -27,6 +27,7 @@
 .ko-grid-table {
 	width:100%;
 	border-collapse: collapse;
+	margin:-1px;
 }
 
 .ko-grid-cell {
@@ -36,7 +37,9 @@
 
 .ko-grid-scroll-container {
 	overflow-y:scroll;
-	height:300px;
+	height:500px;
+	border-left:solid 1px black;
+	border-right:solid 1px black;
 }
 
 .ko-grid-pager {
@@ -83,4 +86,11 @@
 	border:none;
 	display:inline-block; 
     vertical-align:middle;
-} 
+}
+
+.ko-grid-no-rows {
+	height:100%;
+	width:100%;
+	text-align:center;
+	line-height:300px;
+}

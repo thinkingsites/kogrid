@@ -1,3 +1,20 @@
+/*
+kogrid - created by Miguel Ludert
+https://github.com/thinkingsites/kogrid
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 "use strict";
 // create private scope
 (function(){
@@ -17,6 +34,53 @@
 				h:  $(window).height(),
 				w: $(window).width()
 			}),
+	        generateRandomId = function(){
+	            return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
+	        },
+	        addElement = function(appendTo,key,css){
+		        // use jquery for ease of use for now until you can move away from it and use plain JS
+	    	    var 
+	    		    nodeDescription = templates[key],
+	    		    result = $(nodeDescription.template).appendTo(appendTo);
+	    		
+	    	    if(nodeDescription.cssClass){
+		    	    result.addClass(nodeDescription.cssClass)
+		        }
+		    
+		        if(css){
+		    	    result.css(css);
+		        }
+		    
+		        return result;
+	        },
+            appendjQueryUISortingIcons = function(options){
+                
+                // if the sorting icons have been set explicitly to false, leave
+                if(options.addjQueryUiSortingIcons === false)
+                    return;
+
+                var 
+                    selectors = [
+                        "ui-icon",
+                        "ui-icon-triangle-2-n-s",
+                        "ui-icon-triangle-1-n",
+                        "ui-icon ui-icon-triangle-1-s"
+                    ],
+                    // if the sorting icons have been set explicitly to true, force the addition
+                    forceAdd = options.addjQueryUiSortingIcons === true,
+                    // sniff out whether jQuery UI exists
+                    jQueryUiExists = $.ui || _.any(document.styleSheets,function(stylesheet){
+                        return _(stylesheet.rules).map(function(rule){
+                            return rule.selectorText.slice(1);
+                        }).intersection(jquiStyles).value().length == selectors.length;
+                    });
+
+                if(forceAdd || jQueryUiExists){
+		            options.sorting.noSortClass += [undefined,selectors[0],selectors[1]].join(" ");
+		            options.sorting.ascendingClass += [undefined,selectors[0],selectors[2]].join(" ");
+		            options.sorting.descendingClass += [undefined,selectors[0],selectors[3]].join(" ");
+                }
+            },
 	    ViewModel = function(viewModel,element,classes){
 	    	var 
 		    	self = this,
@@ -33,7 +97,11 @@
 	    	self.total = makeObservable(self.total);
 	    	self.pageSize = makeObservable(self.pageSize);
 	    	self.pageIndex = makeObservable(self.pageIndex);
-	        self.resizeHeaders = function(){    		
+	    	self.any = function(){
+	    	var r = getObservable(self.rows);
+	    		return !(_.isUndefined(r) || r.length == 0);
+	    	};
+	      self.resizeHeaders = function(){    		
 				var 
 		    		heads = $("." + self.classes.head,self.element),
 		    		cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
@@ -94,27 +162,26 @@
 			        return;
 
 			    var
-                    column = this,
-                    appendSort =
-                    // find the existing
-                    _.find(_sorting.peek(), function (item, index) {
-                        return item.key === column.key;
-                    }) || {
-                        // 
-                        key: column.key,
-                        direction: column.direction
-                    },
-                    sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
-			            return item.key != column.key;
-			        });
+              column = this,
+              appendSort =
+              // find the existing
+              _.find(_sorting.peek(), function (item, index) {
+                  return item.key === column.key;
+              }) || {
+                  key: column.key,
+                  direction: column.direction
+              },
+              sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
+	            return item.key != column.key;
+	        });
 
-			    if (appendSort.direction === sorting.asc) {
-			        appendSort.direction = sorting.desc;
+			    if (appendSort.direction === self.sorting.asc) {
+			        appendSort.direction = self.sorting.desc;
 			    } else {
-			        appendSort.direction = sorting.asc;
+			        appendSort.direction = self.sorting.asc;
 			    }
 
-			    if (sorting.allowMultiSort) {
+			    if (self.sorting.allowMultiSort) {
 			        // this should set off the subscribed observables
 			        sortingPlaceholder.unshift(appendSort);
 			        _sorting(sortingPlaceholder);
@@ -144,13 +211,13 @@
 			        return item.key === column.key;
 			    });
 			    if (mySort) {
-			        if (mySort.direction == sorting.asc) {
-			            return sorting.ascendingClass;
-			        } else if (mySort.direction == sorting.desc) {
-			            return sorting.descendingClass;
+			        if (mySort.direction == self.sorting.asc) {
+			            return self.sorting.ascendingClass;
+			        } else if (mySort.direction == self.sorting.desc) {
+			            return self.sorting.descendingClass;
 			        }
 			    } 
-			    return sorting.noSortClass;
+			    return self.sorting.noSortClass;
 			};
 				
 	    	self.selectCellTemplate = function(column,rowData){
@@ -234,11 +301,9 @@
 		};
     	self.goToPageText = ko.observable();
 	    	
-            
 	    	// any time the window size changes, re-render the headers
 	    	windowSize.subscribe(self.resizeHeaders);
-	    	
-
+	    
 	    	// find all observables in 
 	    	(function sniff(val){
 	    		_.forOwn(val,function(item,key){
@@ -259,7 +324,7 @@
 	    	if (_.isString(self.url)) {
 	    	    self.refresh = function () {
 
-                    // if there is a loading function, fire it
+                // if there is a loading function, fire it
 	    	        if (_.isFunction(self.loading)) {
                         // pass in the element and the old rows
 	    	            self.loading(self.element,self.rows.peek());
@@ -272,10 +337,10 @@
                     paging = _.isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
                     serverData = peekObservable(self.data),
                     ajaxSorting = {};
-	    	        ajaxSorting[sorting.sortColumn] = _.map(_sorting.peek(),function(item){
+	    	        ajaxSorting[self.sorting.sortColumn] = _.map(_sorting.peek(),function(item){
 	    	            return item.key;
 	    	        });
-	    	        ajaxSorting[sorting.sortDirection] = _.map(_sorting.peek(), function (item) {
+	    	        ajaxSorting[self.sorting.sortDirection] = _.map(_sorting.peek(), function (item) {
 	    	            return item.direction;
 	    	        });
 
@@ -310,8 +375,6 @@
 	    },
 	    cellTemplateId = 'ko-grid-default-cell-template',
 	    defaultOptions = {
-		    data : undefined,
-		    columns : undefined,
 		    pageSize: 25,
 		    pageSizeOptions : [10,25,50,100,200,'All'],
 		    pageIndex:1,
@@ -322,7 +385,19 @@
 		    },
 		    loaded: function (element) {
 		        $("table", element).css({ opacity: 1 });
-		    }
+		    },
+		    noRowsText : "No rows available",
+        sorting : {
+          allowMultiSort : false,
+          sortColumn : "sortColumn",
+          sortDirection : "sortDirection",
+          asc: "asc",
+          desc: "desc",
+          noSortClass: "ko-grid-sort-none",
+          ascendingClass : "ko-grid-sort-asc",
+          descendingClass: "ko-grid-sort-desc",
+          addjQueryUiSortingIcons : "auto"
+        }
 	    },
 	    templates = {
 		    headContainer : {
@@ -342,7 +417,7 @@
 		    	cssClass: "ko-grid-scroll-container"
 		    },
 		    table : {
-		    	template : "<table cellspacing='0' cellpadding='0'><tbody data-bind='foreach : { data : rows, afterRender : $root.afterRender }'></tbody></table>",
+		    	template : "<table cellspacing='0' cellpadding='0' data-bind='visible : any'><tbody data-bind='foreach : { data : rows, afterRender : $root.afterRender }'></tbody></table>",
 		    	cssClass: "ko-grid-table"
 		    },
 		    row : {
@@ -393,38 +468,13 @@
 		    	template : "<div><span data-bind='text:total'></span> records</div>",
 		    	cssClass: "ko-grid-total-text"
 		    },
+			  noRows :{
+		    	template : "<div data-bind='visible : !any(), text : $root.noRowsText'></div>",
+		    	cssClass: "ko-grid-no-rows"
+		    },
 		    cellContentTemplate : {
 		    	template : "<script type='text/html' id='" + cellTemplateId + "'><!-- ko text: $data --><!-- /ko --></script>"
 		    }
-	    },
-	    generateRandomId = function(){
-	        return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
-	    },
-	    addElement = function(appendTo,key,css){
-		    // use jquery for ease of use for now until you can move away from it and use plain JS
-	    	var 
-	    		nodeDescription = templates[key],
-	    		result = $(nodeDescription.template).appendTo(appendTo);
-	    		
-	    	if(nodeDescription.cssClass){
-		    	result.addClass(nodeDescription.cssClass)
-		    }
-		    
-		    if(css){
-		    	result.css(css);
-		    }
-		    
-		    return result;
-	    },
-	    sorting = {
-            allowMultiSort : false,
-            sortColumn : "sortColumn",
-	        sortDirection : "sortDirection",
-	        asc: "asc",
-	        desc: "desc",
-	        noSortClass: "ko-grid-sort-none",
-	        ascendingClass : "ko-grid-sort-asc",
-            descendingClass: "ko-grid-sort-desc"
 	    };
 
 	    $(window).on("resize",_.debounce(function(){
@@ -435,7 +485,8 @@
 		    if(newSize.h !== oldSize.h || newSize.w !== oldSize.w){
 			    windowSize(newSize);
 		    }
-	    },100));
+	    },100));      
+
 		
 	  ko.bindingHandlers.kogrid = {
 	    init : function(element, valueAccessor){
@@ -461,6 +512,7 @@
 		    		head = addElement(headContainer,'head'),
 		    		sortIcon = addElement(head, 'sortIcon'),
 		    		scrollContainer = addElement(elem,'scrollContainer'), 
+		    		table = addElement(scrollContainer,'noRows'),
 		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
 		    		rows = addElement(table,'row'),
 		    		cells = addElement(rows,'cell'),
@@ -495,7 +547,9 @@
 		    			$("<script type='text/html' id='" + id + "'>" + item.template + "</script>").appendTo(element);
 		    		}
 		    	});
-		    		
+		    	
+                appendjQueryUISortingIcons(viewModel);
+
 		    	ko.applyBindingsToDescendants(viewModel,element);
 
                 // expose the grid utilities
@@ -511,8 +565,7 @@
 	    	return { controlsDescendantBindings : true };
 	    }, 
 		options : defaultOptions,
-		templates: templates,
-		sorting: sorting
+		templates: templates
 	  };
 	};
 	
