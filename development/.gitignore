@@ -1,1 +1,6 @@
 *.suo
+obj
+bin
+Properties
+Debug
+Release
