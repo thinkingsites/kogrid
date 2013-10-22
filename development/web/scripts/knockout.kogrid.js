@@ -122,17 +122,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				var 
 		    		heads = $("." + self.classes.head,self.element),
 		    		cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
-                        // map these values for easier debugging
-                        var self = $(this);
-                        return {
-                            left : self.position().left,
-                            width : self.width()
-                        };
-                    }),
+              // map these values for easier debugging
+              var self = $(this);
+              return {
+                left : self.position().left,
+                width : self.width()
+              };
+          	}),
 		    		h,c;
 		    	
                 // in order to resize, we want to make sure the number of headers matches the number of cells
 		    	if(heads.length != cells.length){
+		    		
+			    	heads.css({
+			    		position:"relative",
+			    		top : 0,
+			    		left : "auto",
+			    		width : Math.floor(100 / heads.length) + "%"
+			    	}).width();
+		    		
 		    		return;
 		    	}
 
@@ -146,12 +154,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		h.css({
 		    			position: 'absolute',
 		    			top:0,
-                        // the minus one allows for the offset of collapsed table borders
+              // the minus one allows for the offset of collapsed table borders
 		    			left: c.left -1,
-		    			width : c.width,
-		    			float: "none",
-		    			overflow:"hidden",
-		    			"white-space" : "nowrap"
+		    			width : c.width
 		    		});
 		    	};					
 			};
