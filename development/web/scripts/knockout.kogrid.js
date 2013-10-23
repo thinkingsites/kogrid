@@ -502,7 +502,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	template : "<script type='text/html' id='" + cellTemplateId + "'><!-- ko text: $data --><!-- /ko --></script>"
 		    }
 	    };
-
+	
+	
+		// because we can't control when the bindingHandler will be loaded, wrap the jQuery dom manipulations in $.ready
+		$(function(){
 	    $(window).on("resize",_.debounce(function(){
 		    // there is a bug in IE8 that resizes the window any time the height of any cell changes its height or width dynamically
 		    // this statement is here to ensure that the resizing the header does not go into an infinite loop
@@ -511,8 +514,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    if(newSize.h !== oldSize.h || newSize.w !== oldSize.w){
 			    windowSize(newSize);
 		    }
-	    },100));      
-
+	    },100));
+  	});
 		
 	  ko.bindingHandlers.kogrid = {
 	    init : function(element, valueAccessor){
@@ -542,9 +545,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
 		    		rows = addElement(table,'row'),
 		    		cells = addElement(rows,'cell'),
-		    		defaultTemplate = addElement(elem,'cellContentTemplate'),
 		    		pager,first,previous,next,last,refresh,goToPage;
-		    		
+		    	
+					// append the cell template to the body if it does not already exist
+					// check for the existance of the cell template every time a grid is bound in case it gets deleted by another process
+					var cellTemplate = $("body > #" + cellTemplateId);
+					if(cellTemplate.length == 0){
+			  		$(templates.cellContentTemplate.template).appendTo("body");
+					}
+		    	
 		    	if(viewModel.pager){
 		    		pager = addElement(elem,'pager');
 		    		if (_.isFunction(viewModel.refresh) || viewModel.url) {
@@ -570,11 +579,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		} else {
 		    			var id = generateRandomId();
 		    			viewModel.templates[item.template] = id;
+		    			// these are grid specific templates, append them to the grid element instead of the body
 		    			$("<script type='text/html' id='" + id + "'>" + item.template + "</script>").appendTo(element);
 		    		}
 		    	});
 		    	
-                appendjQueryUISortingIcons(viewModel);
+		    	appendjQueryUISortingIcons(viewModel);
 
 		    	ko.applyBindingsToDescendants(viewModel,element);
 
