@@ -383,8 +383,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	                self.loaded(self.element,self.rows.peek());
 	    	            }
 	    	        })
-                    // return promise object
-                    .promise(); 
+                // return promise object
+                .promise(); 
 	    	    };
 
 	    	    if(ko.isObservable(self.data)){
