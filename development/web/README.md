@@ -15,11 +15,11 @@ Columns are ordered by likelihood of use.
         * **css** - *object or string, observable, optional* - Binds to the cell's knockout css binding and follows all the same rules. <a href="http://knockoutjs.com/documentation/css-binding.html" target="_blank">Knockout Css Binding</a>
         * **style** - *object, observable, optional* - Binds to the cell's knockout style binding and follows all the same rules. <a href="http://knockoutjs.com/documentation/style-binding.html" target="_blank">Knockout Style Binding</a>
         * **visible** - *boolean, observable, optional* - Binds to the cell's and header's knockout <code>visible</code> binding and follows all the same rules. <a href="http://knockoutjs.com/documentation/visible-binding.html" target="_blank">Knockout Visible Binding</a> 
-		* **data**- *object, observable, optional* - Extra data to pass into each grid cell, available as part of the **template** *$data*.  This object is merged with the row data and functions added to this object will have the row data bound to the *this* function keyword.
+		* **data**- *object, observable, optional* - Extra data to pass into each grid cell, available as part of the **template** *$data*.  This object is merged with the row data and functions added to this object will have the row data bound to the *this* function keyword. 
     * **rows** - *array of objects, observable, conditionally required* - If **url** is not used, the row data can be passed in directly through this variable.
     * **total** - *integer, observable, optional* If **url** is not used, the total number of rows can be passed in directly, otherwise will default to the current number of rows in **rows**.
     * **done** - *function, optional* - Will be fired after the grid has been rendered and any time the grid data is changed.
-	* **utils** - *object, optional, special* - The **utils** option is populated by the kogrid binding after the data has been bound to the grid. It exposes methods to manipulate the grid after binding.  If an object is passed in, it will be merged with the grid's **utils** functions with the grid's functions taking precedence and have the grid's view model bound to the *this* parameter.
+    * **utils** - *object, optional, special* - The **utils** option is populated by the kogrid binding after the data has been bound to the grid. It exposes methods to manipulate the grid after binding.  If an object is passed in, it will be merged with the grid's **utils** functions with the grid's functions taking precedence and have the grid's view model bound to the *this* parameter.
 	    * **refresh** - *function* - Will refresh the data from the server.
       * **goToPage** - *function* - If passed in an integer the grid will automatically move to the requested page.
       * **fixHeaders**  - *function* - Will fix the headers to match the current size of the columns.  There are special circumstances where the headers move out of sync from the columns and this function can be used to correct that issue.
@@ -31,6 +31,8 @@ Columns are ordered by likelihood of use.
     * **loading** - *function, optional* - See **loading** in **Global Options**
     * **loaded** - *function, optional* - See **loaded** in **Global Options**
     * **noRowsText** - *string, required, observable* - See **noRowsText** in **Global Options**
+    * **dataType** - *string, optional* - See **loaded** in **Global Options**
+		* **type** - *string, optional* - See **loaded** in **Global Options**
     * **sorting** - *object, required* - See **sorting** in **Global Options**
         * **allowMultiSort** - *boolean,required* - See **sorting.allowMultiSort** in **Global Options**
         * **sortColumn**  - *string, required* - See **sorting.sortColumn** in **Global Options**
@@ -51,6 +53,8 @@ Columns are ordered by likelihood of use.
 		* **loading** - *function, optional* - A function to fire before data is to be loaded onto the screen.  Initially set to dim the <code>opacity</code> of the table to <code>0\.5\</code>.
 		* **loaded** - *function, optional* - A function to fire after data has been rendered onto the screen.  Initially set to restore the <code>opacity</code> of the table to <code>1\</code>.
 		* **noRowsText** - *string, required* - The text to display when there are no rows to display. Initially set to <code>"No rows available."</code>
+		* **dataType** - *string, required* - The format to expect when receiving the data from the server. Initally set to <code>json</code>.
+		* **type** -  *string, required* - The HTTP method to use when sending requests to the server. Initally set to <code>GET</code>.		
 		* **sorting** - *object, required* - Contains sorting options.
 			* **allowMultiSort** - *boolean,required* - Whether or not to send multiple sort commands to the database. Initally set to <code>false</code>
 			* **sortColumn**  - *string, required* -  Customizes the name of the field sent to the server on an ajax request.  The name of the key Initally set to <code>"sortColumn"</code>
