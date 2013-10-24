@@ -388,10 +388,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	    };
 
 	    	    if(ko.isObservable(self.data)){
-                    self.data.subscribe(self.refresh);
-                }
+                self.data.subscribe(self.refresh);
+            }
+            
 	    	    self.pageIndex.subscribe(self.refresh);
-	    	    self.pageSize.subscribe(self.refresh);
+	    	    self.pageSize.subscribe(function(){
+	    	    	var 
+	    	    		totalPages = self.totalPages.peek(),
+	    	    		pageIndex = self.pageIndex.peek();	    	    	
+    	    		if(pageIndex > totalPages){
+    	    			// if the page index is greater than the total pages, set the page index and let its subscription take care of refreshing the grid
+    	    			self.pageIndex(totalPages);
+    	    		} else {
+	    	    		self.refresh();
+	    	    	}
+    	    	});
 	    	    self.refresh();
 	    	}
 	    	
