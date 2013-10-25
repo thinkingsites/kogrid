@@ -114,6 +114,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	self.total = makeObservable(self.total);
 	    	self.pageSize = makeObservable(self.pageSize);
 	    	self.pageIndex = makeObservable(self.pageIndex);
+	    	self.url = makeObservable(self.url);
 	    	self.any = function(){
 	    	var r = getObservable(self.rows);
 	    		return !(_.isUndefined(r) || r.length == 0);
@@ -343,7 +344,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	}(viewModel));
 
             // now that we're set up, let's set up ajax only if we've been given a url
-	    	if (_.isString(self.url)) {
+	    	if (_.isString(self.url.peek())) {
 	    	    self.refresh = function () {
 
                 // if there is a loading function, fire it
@@ -368,7 +369,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
                     // do ajax
 	    	        return $.ajax({
-	    	            url: self.url,
+	    	            url: self.url.peek(),
 	    	            data: _.extend(paging, ajaxSorting, serverData),
 	    	            type: self.type || 'get',
 	    	            dataType: self.dataType || 'json',
@@ -391,6 +392,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                 self.data.subscribe(self.refresh);
             }
             
+	    	    self.url.subscribe(self.refresh);
 	    	    self.pageIndex.subscribe(self.refresh);
 	    	    self.pageSize.subscribe(function(){
 	    	    	var 
@@ -418,10 +420,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    pager: true,
 		    height: "auto",
 		    loading: function (element) {
-		        $("table", element).css({ opacity: 0.5 });
+		    	$("table", element).css({ opacity: 0.5 });
 		    },
 		    loaded: function (element) {
-		        $("table", element).css({ opacity: 1 });
+		    	$("table", element).css({ opacity: 1 });
 		    },
 		    noRowsText : "No rows available",
         sorting : {
