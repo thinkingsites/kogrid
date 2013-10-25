@@ -20,9 +20,9 @@ Columns are ordered by likelihood of use.
     * **total** - *integer, observable, optional* If **url** is not used, the total number of rows can be passed in directly, otherwise will default to the current number of rows in **rows**.
     * **done** - *function, optional* - Will be fired after the grid has been rendered and any time the grid data is changed.
     * **utils** - *object, optional, special* - The **utils** option is populated by the kogrid binding after the data has been bound to the grid. It exposes methods to manipulate the grid after binding.  If an object is passed in, it will be merged with the grid's **utils** functions with the grid's functions taking precedence and have the grid's view model bound to the *this* parameter.
-	    * **refresh** - *function* - Will refresh the data from the server.
-      * **goToPage** - *function* - If passed in an integer the grid will automatically move to the requested page.
-      * **fixHeaders**  - *function* - Will fix the headers to match the current size of the columns.  There are special circumstances where the headers move out of sync from the columns and this function can be used to correct that issue.
+		* **refresh** - *function* - Will refresh the data from the server if a url has been supplied, otherwise does nothing.
+		* **goToPage** - *function* - If passed in an integer the grid will automatically move to the requested page.
+		* **fixHeaders**  - *function* - Will fix the headers to match the current size of the columns.  There are special circumstances where the headers move out of sync from the columns and this function can be used to correct that issue.
     * **pageSize** - *integer, required, observable* - See **pageSize** in **Global Options**
     * **pageSizeOptions** - *array, required, observable* - See **pageSizeOptions** in **Global Options**
     * **pageIndex** - *integer, required, observable* - See **pageIndex** in **Global Options**

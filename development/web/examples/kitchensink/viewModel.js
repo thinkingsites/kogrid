@@ -24,10 +24,13 @@
 						{ title: "Status", key: "status", visible: ko.observable(false) },
 						{ title: "Age", key: "age", style: { width: "50px", "text-align": "center" }, visible: ko.observable(false) }
 				]),
-        renderComplete: function (element) {
-            $(".ko-grid-pager button", element).css({ "background-color": "pink" });
+        done: function (element) {
+            $(".ko-grid-pager button", element).css({ 
+            	"background-color": "pink",
+            	"border-radius" : "5px",
+            	"border" : "solid 1px black"
+            });
         }
     };
-
     return viewmodel;
 });

@@ -21,82 +21,83 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var binding = function($, ko,_){
 		// create global private variables
 		var
-			makeObservable = function(obs){
-				return ko.isObservable(obs) ? obs : ko.observable(obs)
-			},
-			getObservable = function(obs){
-				return ko.isObservable(obs) ? obs() : obs;
-			},
-			peekObservable = function(obs){
-				return ko.isObservable(obs) ? obs.peek() : obs;
-			},
-			windowSize = ko.observable({
-				h:  $(window).height(),
-				w: $(window).width()
-			}),
-      generateRandomId = function(){
-      	return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
-      },
-      addElement = function(appendTo,key,css){
-        // use jquery for ease of use for now until you can move away from it and use plain JS
-  	    var 
-  		    nodeDescription = templates[key],
-  		    result = $(nodeDescription.template).appendTo(appendTo);
-  		
-  	    if(nodeDescription.cssClass){
-    	    result.addClass(nodeDescription.cssClass)
-        }
-    
-        if(css){
-    	    result.css(css);
-        }
-    
-        return result;
-      },
-      appendjQueryUISortingIcons = function(options){
-          
-          // if the sorting icons have been set explicitly to false, leave
-          if(options.addjQueryUiSortingIcons === false) {
-            return;
-          }
-
-          var 
-            selectors = [
-              "ui-icon",
-              "ui-icon-triangle-2-n-s",
-              "ui-icon-triangle-1-n",
-              "ui-icon ui-icon-triangle-1-s"
-            ],
-            // if the sorting icons have been set explicitly to true, force the addition
-            forceAdd = options.addjQueryUiSortingIcons === true,
-            // sniff out whether jQuery UI exists
-            jQueryUiExists = $.ui || _.any(document.styleSheets,function(stylesheet){
-              return _(stylesheet.rules).map(function(rule){
-                  return rule.selectorText.slice(1);
-              }).intersection(jquiStyles).value().length == selectors.length;
-            });
-
-          if(forceAdd || jQueryUiExists){
-            options.sorting.noSortClass += [undefined,selectors[0],selectors[1]].join(" ");
-            options.sorting.ascendingClass += [undefined,selectors[0],selectors[2]].join(" ");
-            options.sorting.descendingClass += [undefined,selectors[0],selectors[3]].join(" ");
-          }
-      },
-      sizeGridContainer = function(element,height){
-     		var 
-     			elem = $(element),
-     			height = parseInt(height) || height,
-     			scrollContainer = $("." + templates.scrollContainer.cssClass,elem),
-     			headerHeight = $("." + templates.headContainer.cssClass,elem).outerHeight(),
-     			pagerHeight = $("." + templates.pager.cssClass,elem).outerHeight();
-     		
-     		elem.css("height",height);
-     		if(height !== "auto" && height !== "inherit"){
-     			scrollContainer.css("height",elem.innerHeight() - headerHeight - pagerHeight);
-	   		} else {
-   				scrollContainer.css("height",height);
-   			}
-      },
+		noop = function() {},
+		makeObservable = function(obs){
+			return ko.isObservable(obs) ? obs : ko.observable(obs)
+		},
+		getObservable = function(obs){
+			return ko.isObservable(obs) ? obs() : obs;
+		},
+		peekObservable = function(obs){
+			return ko.isObservable(obs) ? obs.peek() : obs;
+		},
+		windowSize = ko.observable({
+			h:  $(window).height(),
+			w: $(window).width()
+		}),
+		generateRandomId = function(){
+			return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
+		},
+		addElement = function(appendTo,key,css){
+		// use jquery for ease of use for now until you can move away from it and use plain JS
+		var 
+		    nodeDescription = templates[key],
+		    result = $(nodeDescription.template).appendTo(appendTo);
+		
+		if(nodeDescription.cssClass){
+		    result.addClass(nodeDescription.cssClass)
+		}
+		
+		if(css){
+		    result.css(css);
+		}
+		
+		return result;
+		},
+		appendjQueryUISortingIcons = function(options){
+		  
+		  // if the sorting icons have been set explicitly to false, leave
+		  if(options.addjQueryUiSortingIcons === false) {
+		    return;
+		  }
+		
+		  var 
+		    selectors = [
+				"ui-icon",
+				"ui-icon-triangle-2-n-s",
+				"ui-icon-triangle-1-n",
+				"ui-icon ui-icon-triangle-1-s"
+		    ],
+		    // if the sorting icons have been set explicitly to true, force the addition
+		    forceAdd = options.addjQueryUiSortingIcons === true,
+		    // sniff out whether jQuery UI exists
+		    jQueryUiExists = $.ui || _.any(document.styleSheets,function(stylesheet){
+				return _(stylesheet.rules).map(function(rule){
+					return rule.selectorText.slice(1);
+				}).intersection(jquiStyles).value().length == selectors.length;
+		    });
+		
+			if(forceAdd || jQueryUiExists){
+				options.sorting.noSortClass += [undefined,selectors[0],selectors[1]].join(" ");
+				options.sorting.ascendingClass += [undefined,selectors[0],selectors[2]].join(" ");
+				options.sorting.descendingClass += [undefined,selectors[0],selectors[3]].join(" ");
+			}
+		},
+		sizeGridContainer = function(element,height){
+			var 
+				elem = $(element),
+				height = parseInt(height) || height,
+				scrollContainer = $("." + templates.scrollContainer.cssClass,elem),
+				headerHeight = $("." + templates.headContainer.cssClass,elem).outerHeight(),
+				pagerHeight = $("." + templates.pager.cssClass,elem).outerHeight();
+			
+			elem.css("height",height);
+			if(height !== "auto" && height !== "inherit"){
+				scrollContainer.css("height",elem.innerHeight() - headerHeight - pagerHeight);
+			} else {
+				scrollContainer.css("height",height);
+			}
+		},
 	    ViewModel = function(viewModel,element,classes){
 	    	var 
 		    	self = this,
@@ -109,27 +110,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	    	self.element = element;
 	    	self.templates = {};
 	    	self.classes = classes;
-	    	self.height = makeObservable(self.height);
 	    	self.rows = makeObservable(self.rows);
+	    	self.height = makeObservable(self.height);
 	    	self.total = makeObservable(self.total);
 	    	self.pageSize = makeObservable(self.pageSize);
 	    	self.pageIndex = makeObservable(self.pageIndex);
 	    	self.url = makeObservable(self.url);
 	    	self.any = function(){
-	    	var r = getObservable(self.rows);
+	    		var r = getObservable(self.rows);
 	    		return !(_.isUndefined(r) || r.length == 0);
 	    	};
-	      self.resizeHeaders = function(){    		
+			self.resizeHeaders = function(){    		
 				var 
-		    		heads = $("." + self.classes.head,self.element),
-		    		cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
-              // map these values for easier debugging
-              var self = $(this);
-              return {
-                left : self.position().left,
-                width : self.width()
-              };
-          	}),
+					heads = $("." + self.classes.head,self.element),
+					cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
+						var $this = $(this);
+						// map these values for easier debugging
+						return {
+							left : $this.position().left,
+							width : $this.width()
+						};
+					}),
 		    		h,c;
 		    	
                 // in order to resize, we want to make sure the number of headers matches the number of cells
@@ -155,14 +156,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		h.css({
 		    			position: 'absolute',
 		    			top:0,
-              // the minus one allows for the offset of collapsed table borders
+              			// the minus one allows for the offset of collapsed table borders
 		    			left: c.left -1,
 		    			width : c.width
 		    		});
 		    	};					
 			};
 	    	self.afterRender = _.debounce(function(){
-					self.resizeHeaders();
+				self.resizeHeaders();
 	    		sizeGridContainer(self.element,self.height.peek());
 	    		if(_.isFunction(self.done)){
 	    			self.done(element)
@@ -184,19 +185,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    if (this.sortable !== true)
 			        return;
 
-			    var
-              column = this,
-              appendSort =
-              // find the existing
-              _.find(_sorting.peek(), function (item, index) {
-                  return item.key === column.key;
-              }) || {
-                  key: column.key,
-                  direction: column.direction
-              },
-              sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
-	            return item.key != column.key;
-	        });
+				var
+					column = this,
+					appendSort = _.find(_sorting.peek(), function (item, index) {
+						  return item.key === column.key;
+						}) || {
+						  key: column.key,
+						  direction: column.direction
+						},
+						sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
+						return item.key != column.key;
+					});
 
 			    if (appendSort.direction === self.sorting.asc) {
 			        appendSort.direction = self.sorting.desc;
@@ -290,8 +289,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	    	self.totalPages = ko.computed(function () {
 	    	    var
-			    		totalRows = self.total(),
-              pageSize = self.pageSize();
+					totalRows = self.total(),
+					pageSize = self.pageSize();
 	    	    if (_.isNumber(totalRows) && _.isNumber(pageSize)) {
 	    	        return Math.ceil(totalRows / pageSize);
 				} else {
@@ -299,30 +298,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				}
 			});
 
-    	self.first = function () {
-    	    self.pageIndex(1);
-    	};
-    	self.previous = function () {
-    	    var newPage = self.pageIndex.peek();
-    	    self.pageIndex(Math.max(1,newPage - 1));
-    	};
-    	self.next = function () {
-    	    var
-              newPage = self.pageIndex.peek(),
-    	        maxPage = self.totalPages.peek();
-    	    self.pageIndex(Math.min(maxPage,newPage + 1));
-    	};
-		self.last = function () {
-			self.pageIndex(self.totalPages.peek());
-		};
-		self.goToPage = function () {
+	    	self.first = function () {
+	    	    self.pageIndex(1);
+	    	};
+	    	
+	    	self.previous = function () {
+	    	    var newPage = self.pageIndex.peek();
+	    	    self.pageIndex(Math.max(1,newPage - 1));
+	    	};
+	    	
+	    	self.next = function () {
+	    	    var
+	              newPage = self.pageIndex.peek(),
+	    	        maxPage = self.totalPages.peek();
+	    	    self.pageIndex(Math.min(maxPage,newPage + 1));
+	    	};
+	    	
+			self.last = function () {
+				self.pageIndex(self.totalPages.peek());
+			};
+			
+			self.goToPage = function () {
 				var page = parseInt(self.goToPageText.peek());
 				if(_.isNumber(page) && page >= 1 && page <= self.totalPages.peek())
-			    self.pageIndex(page);
-			else 
-			    self.goToPageText("");
-		};
-    	self.goToPageText = ko.observable();
+				    self.pageIndex(page);
+				else 
+				    self.goToPageText("");
+			};
+			
+    		self.goToPageText = ko.observable();
 	    	
 	    	// any time the window size changes, re-render the headers
 	    	windowSize.subscribe(self.resizeHeaders);
@@ -345,69 +349,87 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
             // now that we're set up, let's set up ajax only if we've been given a url
 	    	if (_.isString(self.url.peek())) {
+	    		// if the grid is an ajax grid, make rows a simple observable
+	    		self.rows = makeObservable(self.rows);
 	    	    self.refresh = function () {
-
-                // if there is a loading function, fire it
-	    	        if (_.isFunction(self.loading)) {
-                        // pass in the element and the old rows
-	    	            self.loading(self.element,self.rows.peek());
-	    	        }
-
-                    // calculate paging data and create ajax object
-	    	        var 
-                    pageIndex = self.pageIndex.peek(),
-                    pageSize = self.pageSize.peek(),
-                    paging = _.isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
-                    serverData = peekObservable(self.data),
-                    ajaxSorting = {};
-	    	        ajaxSorting[self.sorting.sortColumn] = _.map(_sorting.peek(),function(item){
-	    	            return item.key;
-	    	        });
-	    	        ajaxSorting[self.sorting.sortDirection] = _.map(_sorting.peek(), function (item) {
-	    	            return item.direction;
-	    	        });
-
-                    // do ajax
-	    	        return $.ajax({
-	    	            url: self.url.peek(),
-	    	            data: _.extend(paging, ajaxSorting, serverData),
-	    	            type: self.type || 'get',
-	    	            dataType: self.dataType || 'json',
-	    	        }).done(function (ajaxResult) {
-                        // set observables
-	    	            self.rows(ajaxResult.rows);
-	    	            self.total(ajaxResult.total || ajaxResult.rows.length);
-	    	        }).always(function () {
-                        // if there is a loaded function, fire it
-	    	            if (_.isFunction(self.loaded)) {
-                            // pass in the element and the new rows
-	    	                self.loaded(self.element,self.rows.peek());
-	    	            }
-	    	        })
-                // return promise object
-                .promise(); 
-	    	    };
-
-	    	    if(ko.isObservable(self.data)){
-                self.data.subscribe(self.refresh);
-            }
-            
+		            // if there is a loading function, fire it
+		  	        if (_.isFunction(self.loading)) {
+						// pass in the element and the old rows
+		  	            self.loading(self.element,self.rows.peek());
+		  	        }
+		
+					// calculate paging data and create ajax object
+		  	        var 
+		                pageIndex = self.pageIndex.peek(),
+		                pageSize = self.pageSize.peek(),
+		                paging = _.isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
+		                serverData = peekObservable(self.data),
+		                ajaxSorting = {};
+		                
+		  	        ajaxSorting[self.sorting.sortColumn] = _.map(_sorting.peek(),function(item){
+		  	            return item.key;
+		  	        });
+		  	        
+		  	        ajaxSorting[self.sorting.sortDirection] = _.map(_sorting.peek(), function (item) {
+		  	            return item.direction;
+		  	        });
+		
+		                // do ajax
+		  	        return $.ajax({
+		  	            url: self.url.peek(),
+		  	            data: _.extend(paging, ajaxSorting, serverData),
+		  	            type: self.type || 'get',
+		  	            dataType: self.dataType || 'json',
+		  	        }).done(function (ajaxResult) {
+		                // set observables
+		  	            self.rows(ajaxResult.rows);
+		  	            self.total(ajaxResult.total || ajaxResult.rows.length);
+		  	        }).always(function () {
+		                // if there is a loaded function, fire it
+		  	            if (_.isFunction(self.loaded)) {
+		                    // pass in the element and the new rows
+		  	                self.loaded(self.element,self.rows.peek());
+		  	            }
+		  	        })
+		            // return promise object
+		            .promise(); 
+		    	};
+		
+		    	if(ko.isObservable(self.data)){
+		          	self.data.subscribe(self.refresh);
+		        }
+	          
 	    	    self.url.subscribe(self.refresh);
-	    	    self.pageIndex.subscribe(self.refresh);
-	    	    self.pageSize.subscribe(function(){
-	    	    	var 
-	    	    		totalPages = self.totalPages.peek(),
-	    	    		pageIndex = self.pageIndex.peek();	    	    	
-    	    		if(pageIndex > totalPages){
-    	    			// if the page index is greater than the total pages, set the page index and let its subscription take care of refreshing the grid
-    	    			self.pageIndex(totalPages);
-    	    		} else {
-	    	    		self.refresh();
-	    	    	}
-    	    	});
-	    	    self.refresh();
+    	    	self.refresh();
+	    	} else {
+	    		self.refresh = noop;
+	    		
+	    		// if the grid is populated by a fixed array
+	    		var _rows = makeObservable(self.rows);
+	    		self.rows = ko.computed(function(){
+	    			var 
+	    				pageSize = self.pageSize(),
+	    				start = (self.pageIndex()-1) * pageSize;
+	    			
+	    			return _rows().slice(start,start+pageSize);
+	    		});
+	    		
+	    	 	self.total(_rows.peek().length);
 	    	}
 	    	
+    	    self.pageIndex.subscribe(self.refresh);
+    	    self.pageSize.subscribe(function(){
+    	    	var 
+    	    		totalPages = self.totalPages.peek(),
+    	    		pageIndex = self.pageIndex.peek();	    	    	
+  	    		if(pageIndex > totalPages){
+  	    			// if the page index is greater than the total pages, set the page index and let its subscription take care of refreshing the grid
+  	    			self.pageIndex(totalPages);
+  	    		} else {
+    	    		self.refresh();
+    	    	}
+    		});
+    	
 	    	self.height.subscribe(function(newVal){
 	    		sizeGridContainer(self.element,newVal);
 	    	});
@@ -426,17 +448,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	$("table", element).css({ opacity: 1 });
 		    },
 		    noRowsText : "No rows available",
-        sorting : {
-          allowMultiSort : false,
-          sortColumn : "sortColumn",
-          sortDirection : "sortDirection",
-          asc: "asc",
-          desc: "desc",
-          noSortClass: "ko-grid-sort-none",
-          ascendingClass : "ko-grid-sort-asc",
-          descendingClass: "ko-grid-sort-desc",
-          addjQueryUiSortingIcons : "auto"
-        }
+	        sorting : {
+				allowMultiSort : false,
+				sortColumn : "sortColumn",
+				sortDirection : "sortDirection",
+				asc: "asc",
+				desc: "desc",
+				noSortClass: "ko-grid-sort-none",
+				ascendingClass : "ko-grid-sort-asc",
+				descendingClass: "ko-grid-sort-desc",
+				addjQueryUiSortingIcons : "auto"
+	        }
 	    },
 	    templates = {
 		    headContainer : {
@@ -464,7 +486,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	cssClass: "ko-grid-row"
 		    },
 		    cell : {
-		    	template : "<td data-bind='template : $root.selectCellTemplate($data,$parent), visible : $root.isColumnVisible($data), style : $data.style, css : $data.css'></td>",
+		    	template : "<td data-bind='template : $root.selectCellTemplate($data,$parent,$index,$context), visible : $root.isColumnVisible($data), style : $data.style, css : $data.css'></td>",
 		    	cssClass: "ko-grid-cell"
 		    },
 		    pager : {
@@ -569,7 +591,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	
 		    	if(viewModel.pager){
 		    		pager = addElement(elem,'pager');
-		    		if (_.isFunction(viewModel.refresh) || viewModel.url) {
+		    		if (viewModel.refresh !== noop) {
 		    		    addElement(pager, 'refresh');
 		    		}
 		    		addElement(pager,'first');
