@@ -1,6 +1,8 @@
 kogrid
 ======
 
+Uses Knockout 3.0.0.
+
 **kogrid** is intended to be a grid fully implemented in knockout with full support for observables.  Most of the **options** support observables and are marked *observable* or *observableArray* within this documentation.
 
 Columns are ordered by likelihood of use.

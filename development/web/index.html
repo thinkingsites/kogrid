@@ -48,7 +48,7 @@
             "jquery": "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
             "jqueryui" : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
             "_" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
-            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min",
+            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/3.0.0/knockout-min",
             "mockjax" : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
             "markdown" : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
             "lesscss" : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
@@ -83,7 +83,7 @@
 								id = self.attr("href").slice(1),
 								panel = $("#" + id);
 							if(panel.length == 0) {
-								$("#tabs > ul a.active").removeClass(".active");
+								$("#tabs > ul a.active").removeClass("active");
 								$("#tabs > div").hide();
 								self.addClass("active");
 								
@@ -93,14 +93,19 @@
 									ko.applyBindings(viewmodel,panel[0]);
 								});
 							} else if(panel.is(":hidden")){
-								$("#tabs > ul a.active").removeClass(".active");
+								$("#tabs > ul a.active").removeClass("active");
 								$("#tabs > div").hide();
 								self.addClass("active");
 								panel.show();
 							}
+						})
+						
+						var toTrigger = $("#tabs > ul a[href='" + document.location.hash + "']");
+						
+						if(toTrigger.length == 0)
+							toTrigger = $("#tabs > ul li:first a");
 							
-							return false;
-						}).first().trigger("click");
+						toTrigger.first().trigger("click");
 						
             // load documentation
             $.ajax({
@@ -136,13 +141,20 @@
                 overflow:hidden;
                 margin-left:10px;
             } 
+            #tabs h1,
+            #tabs p            
+            {
+            	margin-bottom:20px;	
+            }
         </style>
 	</head>
 	<body style="margin:20px;font-size:12px;font-family:sans-serif;">
         <div id="tabs">
             <ul>
-                <li><a href="#manual.rows">Manual Rows</a></li>
-                <li><a href="#KitchenSink">Kitchen Sink</a></li>
+                <li><a href="#manualrows">Manual Rows</a></li>
+                <li><a href="#groupingungrouped">Grouping - Ungrouped</a></li>
+                <!--<li><a href="#groupingpregrouped">Grouping - Pregrouped data</a></li>-->
+                <li><a href="#kitchensink">Kitchen Sink</a></li>
             </ul>
         </div>
         <div id="documentation"></div>
