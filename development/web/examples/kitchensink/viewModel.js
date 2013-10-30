@@ -1,11 +1,11 @@
 ﻿define(["knockout","mockjax.settings"], function (ko) {
     var viewmodel = {
         url: 'sampledata',
-        height: "300px",
+        height: "500px",
         // columns can be observable, and can be added or subtracted dynamically
         columns: ko.observableArray([
 			{
-			    title: "ID",
+				key : "checkbox",
 			    template: "<input type='checkbox' data-bind='checked : isChecked()'/>",
 			    // the data field allows us to expose data and functions to the template
 			    data: {
@@ -13,9 +13,14 @@
 			            return Math.ceil(Math.random() * 10) > 5;
 			        }
 			    },
-			    style: { width: "50px", "text-align": "center" },
+			    style: { width: "25px", "text-align": "center" },
 			    css: "orange"
 			},
+        	{
+        		title : "ID",
+        		template : "<!-- ko text : $rowIndex()+1 --><!-- /ko -->",
+			    style: { width: "40px", "text-align": "right" },
+        	},
 			{ title: "Name", key: "name", css: "hover" },
 			{ title: "Occupation", key: "occupation" },
 			{ title: "Address", key: "address" },

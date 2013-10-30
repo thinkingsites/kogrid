@@ -3,8 +3,8 @@
 <p>
 	<strong>Selected Columns</strong><br>
 	<!-- ko foreach : columns -->
-		<input type='checkbox' data-bind='attr : { id : "__" + title }, checked : _.isUndefined($data.visible)? true : $data.visible , enable: ko.isObservable($data.visible)' >
-		<label data-bind='text:title, attr : { for : "__" + title }'></label>
+		<input type='checkbox' data-bind='attr : { id : "__" + $data.key }, checked : _.isUndefined($data.visible)? true : $data.visible , enable: ko.isObservable($data.visible)' >
+		<label data-bind='text: $data.key || "checkbox", attr : { for : "__" + $data.key }'></label>
 	<!-- /ko -->
 	</select>
 </p>

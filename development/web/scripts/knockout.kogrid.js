@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		// create global private variables
 		var
 			// make aliases for minification
-			throttle = ko.extenders.throttle,
+			throttle = _.debounce,//ko.extenders.throttle,
 			isObservable = ko.isObservable,
 			bindingHandlers = ko.bindingHanders,
 			extend =_.extend,
@@ -124,8 +124,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	_sorting = ko.observableArray();
 		    	
 		    	extend(self,defaultOptions,viewModel);
-		    	self.element = element;
 		    	self.templates = {};
+		    	self.element = element;
 		    	self.classes = classes;
 		    	self.rows = makeObservable(self.rows);
 		    	self.height = makeObservable(self.height);
@@ -138,7 +138,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		var r = getObservable(self.rows);
 		    		return !(_.isUndefined(r) || r.length == 0);
 		    	};
-				self.resizeHeaders = function(){    		
+				self.resizeHeaders = function(){ 
+					// try and find a way to do this without ajax   		
 					var 
 						heads = $("." + self.classes.head,self.element),
 						cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
@@ -187,7 +188,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					if(isFunction(self.done)){
 						self.done(element)
 					}
-				},100);
+				},10);
 					
 				self.sort = function (event) {
 	
@@ -404,7 +405,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	 	self.total(_rows.peek().length);
 		    	}
 		    	
-		    	
 	    	    self.pageIndex.subscribe(self.refresh);
 	    	    
 	    	    self.pageSize.subscribe(function(){
@@ -423,6 +423,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		sizeGridContainer(self.element,newVal);
 		    	});
 		    	
+		    	self.isColumnVisible = function(column){
+		    		column = column || this;		    		
+					if(isObservable(column.visible) || _.isBoolean(column.visible))
+						return column.visible;
+					else 
+						return true;
+				};
 		    },
 		    cellTemplateId = 'ko-grid-default-cell-template',
 		    defaultOptions = {
@@ -456,7 +463,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	cssClass: "ko-grid-head-container"
 			    },
 			    head : {
-			    	template : "<div data-bind='kogrid$cell:{data:$data,header:true}'><span data-bind='text : ($root.isString($data) ? $data : $data.title)'></span></div>",
+			    	template : "<div data-bind='visible : $root.isColumnVisible($data), click : $root.sort, css : { \"ko-grid-is-sortable\" : $data.sortable } '><span data-bind='text : ($root.isString($data) ? $data : $data.title)'></span></div>",
 			    	cssClass: "ko-grid-head"
 			    },
 			    sortIcon : {
@@ -472,7 +479,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	cssClass: "ko-grid-table"
 			    },
 			    row : {
-			    	template : "<tr data-bind='foreach:$root.columns,css:$index()%2?$root.classes.row+\"-even\":$root.classes.row+\"-odd\"'></tr>",
+			    	template : "<tr data-bind='foreach : $root.columns, css : $index()%2 ? $root.classes.row + \"-even\" : $root.classes.row + \"-odd\" '></tr>",
 			    	cssClass: "ko-grid-row"
 			    },
 			    cell : {
@@ -487,11 +494,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	template : "<button type='button' data-bind='click : first, disable : pageIndex() == 1' title='First'>&lt;&lt; First</button>",
 			    	cssClass: "ko-grid-first"
 			    },
-				  previous : {
+				previous : {
 			    	template : "<button type='button' data-bind='click : previous, disable : pageIndex() == 1' title='Previous'>&lt; Previous</button>",
 			    	cssClass: "ko-grid-previous"
 			    },
-				  next : {
+				next : {
 			    	template : "<button type='button' data-bind='click : next, disable : pageIndex() == totalPages()' title='Next'>Next &gt;</button>",
 			    	cssClass: "ko-grid-next"
 			    },
@@ -499,7 +506,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	template : "<button type='button' data-bind='click : last, disable : pageIndex() == totalPages()' title='Last'>Last  &gt;&gt;</button>",
 			    	cssClass: "ko-grid-last"
 			    },
-				  refresh  : {
+				refresh  : {
 			    	template : "<button type='button' data-bind='click : refresh' title='Refresh'>Refresh</button>",
 			    	cssClass: "ko-grid-refresh"
 			    },
@@ -515,11 +522,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: totalPages'></span></div>",
 			    	cssClass: "ko-grid-paging-text"
 			    },
-				  totalText :{
+				totalText :{
 			    	template : "<div><span data-bind='text:total'></span> records</div>",
 			    	cssClass: "ko-grid-total-text"
 			    },
-				  noRows :{
+				noRows :{
 			    	template : "<div data-bind='visible : !any(), text : $root.noRowsText'></div>",
 			    	cssClass: "ko-grid-no-rows"
 			    }
@@ -542,57 +549,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	var bh = {
 		kogrid$cell : {
 			init : function(element, valueAccessor, allBindings, viewModel, bindingContext){
-				
 				var 
-					value = valueAccessor(),
-					isHeader = value.header,
 					root = bindingContext.$root,
 					data = bindingContext.$parent,
 					column = bindingContext.$data,
 					templateName = root.templates[column.template],
 					bindingAccessors = {
-						visible : function(){
-							if(isObservable(this.visible))
-								return this.visible();
-							else if(_.isBoolean(this.visible))
-								return this.visible;
-							else 
-								return true;
-						}.bind(data),
+						visible : root.isColumnVisible.bind(column)
 					};				
-					
-				if(isHeader){
-					bindingAccessors.css = bindThis({ 'ko-grid-is-sortable' : column.sortable });
-					if(column.sortable){
-						bindingAccessors.click = root.sort.bind(column);	
-					}
-				} else {
-					if(templateName){
-						// if there is a template, bind it and display the template
-						bindingAccessors.template = bindThis({
-							name : templateName,
-			    			// the column can contain extra and/or default row data
-		            		// add the extra data to what's passed into the template
-							data : extend({ },column.data,data)
-						});
-					} else {
-						// if there is no template, display the row value
-			    		var 
-							result,
-							columnName = isString(column) ? column : column.key,
-							columnValue = data[columnName],
-							result = isFunction(columnValue) ? columnValue() : columnValue;					
-						
-						bindingAccessors.text = bindThis(result);
-					}
-					extend(bindingAccessors,{
-						style : bindThis(column.style),
-						css : bindThis(column.css),
+
+				if(templateName){
+					// if there is a template, bind it and display the template
+					bindingAccessors.template = bindThis({
+						name : templateName,
+		    			// the column can contain extra and/or default row data
+	            		// add the extra data to what's passed into the template
+						data : extend({ },column.data,data)
 					});
+				} else {
+					// if there is no template, display the row value
+		    		var 
+						result,
+						columnName = isString(column) ? column : column.key,
+						columnValue = data[columnName],
+						result = isFunction(columnValue) ? columnValue() : columnValue;					
+					
+					bindingAccessors.text = bindThis(result);
 				}
+				extend(bindingAccessors,{
+					style : bindThis(column.style),
+					css : bindThis(column.css),
+				});
 				
-			    ko.applyBindingsToDescendants(bindingContext,element);
-				ko.applyBindingAccessorsToNode(element,bindingAccessors,bindingContext);
+				// the extended binding context allows children to expose the parent's index.... maybe this isn't the best ay
+				ko.applyBindingAccessorsToNode(element,bindingAccessors,bindingContext.extend({
+					$columnIndex : bindThis(bindingContext.$index()),
+					$rowIndex : bindThis(bindingContext.$parentContext.$index())
+				}));
 				
 		        return { controlsDescendantBindings: true };
 			}
@@ -626,13 +619,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		rows = addElement(table,'row'),
 		    		cells = addElement(rows,'cell'),
 		    		pager,first,previous,next,last,refresh,goToPage;
-		    	
-					// append the cell template to the body if it does not already exist
-					// check for the existance of the cell template every time a grid is bound in case it gets deleted by another process
-					//var cellTemplate = $("body > #" + cellTemplateId);
-					//if(cellTemplate.length == 0){
-			  		//	$(templates.cellContentTemplate.template).appendTo("body");
-					//}
 			    	
 			    	if(viewModel.pager){
 			    		pager = addElement(elem,'pager');
