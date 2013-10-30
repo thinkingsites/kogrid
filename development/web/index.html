@@ -75,55 +75,55 @@
         });
 
         require(["jquery","knockout","jqueryui"],function($,ko){
-          $(function () {
-            // set up tabs
-						$("#tabs > ul a").on("click",function(){
-							var 
-								self = $(this),
-								id = self.attr("href").slice(1),
-								panel = $("#" + id);
-							if(panel.length == 0) {
-								$("#tabs > ul a.active").removeClass("active");
-								$("#tabs > div").hide();
-								self.addClass("active");
-								
-								panel = $("<div></div>").attr("id",id).appendTo("#tabs");
-								require(["text!examples/" + id + "/view.html","examples/" + id + "/viewmodel"],function(html,viewmodel){
-									panel.html(html);
-									ko.applyBindings(viewmodel,panel[0]);
-								});
-							} else if(panel.is(":hidden")){
-								$("#tabs > ul a.active").removeClass("active");
-								$("#tabs > div").hide();
-								self.addClass("active");
-								panel.show();
-							}
-						})
+          	$(function () {
+            	// set up tabs
+				$("#tabs > ul a").on("click",function(){
+					var 
+						self = $(this),
+						id = self.attr("href").slice(1),
+						panel = $("#" + id);
+					if(panel.length == 0) {
+						$("#tabs > ul a.active").removeClass("active");
+						$("#tabs > div").hide();
+						self.addClass("active");
 						
-						var toTrigger = $("#tabs > ul a[href='" + document.location.hash + "']");
+						panel = $("<div></div>").attr("id",id).appendTo("#tabs");
+						require(["text!examples/" + id + "/view.html","examples/" + id + "/viewmodel"],function(html,viewmodel){
+							panel.html(html);
+							ko.applyBindings(viewmodel,panel[0]);
+						});
+					} else if(panel.is(":hidden")){
+						$("#tabs > ul a.active").removeClass("active");
+						$("#tabs > div").hide();
+						self.addClass("active");
+						panel.show();
+					}
+				})
+				
+				var toTrigger = $("#tabs > ul a[href='" + document.location.hash + "']");
+				
+				if(toTrigger.length == 0)
+					toTrigger = $("#tabs > ul li:first a");
+					
+				toTrigger.first().trigger("click");
 						
-						if(toTrigger.length == 0)
-							toTrigger = $("#tabs > ul li:first a");
-							
-						toTrigger.first().trigger("click");
-						
-            // load documentation
-            $.ajax({
-                url: "readme.md",
-                type: "get",
-                dataType: "text"
-            }).done(function (markdown) {
-                try {
-                    var converter = new Markdown.Converter();
-                    $("#documentation").html(converter.makeHtml(markdown));
-                } catch (e) {
-                    console.error(markdown);
-                    console.error(e);
-                    $("#documentation").html("<div style='color:red;text-align:center;font-size:20px;'>Documentation did not load.</div>")
-                }
-            });
+	            // load documentation
+	            $.ajax({
+	                url: "readme.md",
+	                type: "get",
+	                dataType: "text"
+	            }).done(function (markdown) {
+	                try {
+	                    var converter = new Markdown.Converter();
+	                    $("#documentation").html(converter.makeHtml(markdown));
+	                } catch (e) {
+	                    console.error(markdown);
+	                    console.error(e);
+	                    $("#documentation").html("<div style='color:red;text-align:center;font-size:20px;'>Documentation did not load.</div>")
+	                }
+	            });
       		});
-    		});
+    	});
 		</script>
         <style>
             h1,h2,h3,h4,h5,h6 { font-weight:bold; }
@@ -149,6 +149,7 @@
         </style>
 	</head>
 	<body style="margin:20px;font-size:12px;font-family:sans-serif;">
+		<div id="wub"></div>
         <div id="tabs">
             <ul>
                 <li><a href="#manualrows">Manual Rows</a></li>
