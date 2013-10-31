@@ -25,6 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			throttle = _.debounce,//ko.extenders.throttle,
 			isObservable = ko.isObservable,
 			bindingHandlers = ko.bindingHanders,
+			applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode,
+			elementExists = function(toTest){
+				return (_.isString(toTest) && document.getElementById(toTest)) || _.isElement(toTest)
+			},
 			extend =_.extend,
 			observable = ko.observable,
 			win = window,
@@ -137,6 +141,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	self.any = function(){
 		    		var r = getObservable(self.rows);
 		    		return !(_.isUndefined(r) || r.length == 0);
+		    	};
+		    	self.none = function(){
+		    		var r = getObservable(self.rows);
+		    		return _.isUndefined(r) || r.length == 0;
 		    	};
 				self.resizeHeaders = function(){ 
 					// try and find a way to do this without ajax   		
@@ -444,7 +452,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    loaded: function (element) {
 			    	$("table", element).css({ opacity: 1 });
 			    },
-			    noRowsText : "No rows available",
+			    noRows : "No rows available",
 		        sorting : {
 					allowMultiSort : false,
 					sortColumn : "sortColumn",
@@ -527,7 +535,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	cssClass: "ko-grid-total-text"
 			    },
 				noRows :{
-			    	template : "<div data-bind='visible : !any(), text : $root.noRowsText'></div>",
+			    	template : "<div></div>",
 			    	cssClass: "ko-grid-no-rows"
 			    }
 		    };
@@ -558,6 +566,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						visible : root.isColumnVisible.bind(column)
 					};				
 
+				
+
 				if(templateName){
 					// if there is a template, bind it and display the template
 					bindingAccessors.template = bindThis({
@@ -576,13 +586,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					
 					bindingAccessors.text = bindThis(result);
 				}
+				
 				extend(bindingAccessors,{
 					style : bindThis(column.style),
 					css : bindThis(column.css),
 				});
 				
 				// the extended binding context allows children to expose the parent's index.... maybe this isn't the best ay
-				ko.applyBindingAccessorsToNode(element,bindingAccessors,bindingContext.extend({
+				applyBindingAccessorsToNode(element,bindingAccessors,bindingContext.extend({
 					$columnIndex : bindThis(bindingContext.$index()),
 					$rowIndex : bindThis(bindingContext.$parentContext.$index())
 				}));
@@ -613,8 +624,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
 		    		head = addElement(headContainer,'head'),
 		    		sortIcon = addElement(head, 'sortIcon'),
-		    		scrollContainer = addElement(elem,'scrollContainer'), 
-		    		table = addElement(scrollContainer,'noRows'),
+		    		scrollContainer = addElement(elem,'scrollContainer'),
 		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
 		    		rows = addElement(table,'row'),
 		    		cells = addElement(rows,'cell'),
@@ -634,25 +644,58 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    		addElement(pager,'goToPage');
 			    		addElement(pager,'totalText');
 			    	}
-			    		
+			    	
+			    	var makeTemplate = function(templateName){
+			    		// if the element exists, leave
+			    		if(!elementExists(templateName))
+			    		{
+			    			var id = generateRandomId();
+			    			viewModel.templates[templateName] = id;
+			    			// these are grid specific templates, append them to the grid element instead of the body
+			    			$("<script type='text/html' id='" + id + "'>" + getObservable(templateName) + "</script>").appendTo(element);
+			    		}
+			    	};
+			    	
 			    	// add dynamic templates
 			    	_(columns).filter(function(item){
 			    		return isString(item.template);
 			    	}).each(function(item){
-			    		// if the element exists, leave
-			    		if(_.isElement(document.getElementById(item.template))){
-			    			return;
-			    		} else {
-			    			var id = generateRandomId();
-			    			viewModel.templates[item.template] = id;
-			    			// these are grid specific templates, append them to the grid element instead of the body
-			    			$("<script type='text/html' id='" + id + "'>" + item.template + "</script>").appendTo(element);
-			    		}
+			    		makeTemplate(item.template);
 			    	});
 			    	
 			    	appendjQueryUISortingIcons(viewModel);
 			
 			    	ko.applyBindingsToDescendants(viewModel,element);
+			
+					// set up the 'no rows' element
+		    		var 
+		    			norowsElement = addElement(scrollContainer,'noRows'),
+		    			norowsAccessor = {
+			    			visible : bindThis(viewModel.none),
+			    			template : bindThis({
+			    				// if no rows is an observable the template will handle this automatically
+			    				name : function(){
+			    					var template = getObservable(viewModel.noRows);
+			    					return elementExists(template) ? template : viewModel.templates[template];
+			    				},
+			    				// pass in the original viewmodel object
+			    				data : value
+			    			})
+			    		};
+			    	
+			    	// make the default template for the no rows object
+			    	makeTemplate(getObservable(viewModel.noRows))			    	
+			    	
+			    	// if the no rows is an observable, allow it to add new templates to the templates list
+			    	if(isObservable(viewModel.noRows)){
+			    		viewModel.noRows.subscribe(function(newval){
+			    			if(!viewModel.templates[newval]){
+			    				makeTemplate(newval);
+			    			}
+			    		});
+			    	}
+			    	
+		    		applyBindingAccessorsToNode(norowsElement[0],norowsAccessor);
 			
 					// expose the grid utilities
 					value.utils = extend({},value.utils,{

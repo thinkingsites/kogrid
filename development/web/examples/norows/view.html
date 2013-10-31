@@ -1,0 +1,15 @@
+﻿<h1>No Rows</h1>
+<p>In this example, we're taking showing how grids with no rows works.</p>
+<p>
+	<button data-bind="click : live">Apply Rows</button>
+	<button data-bind="click : template1">No Rows (default)</button>
+	<button data-bind="click : template2">No Rows (html template)</button>
+	<button data-bind="click : template3">No Rows (inline knockout template)</button>
+	<button data-bind="click : template4">No Rows (external template)</button>
+</p>
+<div data-bind="kogrid : $data.gridOptions"></div>
+<script id="no-rows-callback-template" type="text/html">
+	<div data-bind='click : noRowsCallback, style : noRowsStyleForExternal'>
+		Click me!  I'm and external knockout template with a callback bound to my on click event.
+	</div>
+</script>
