@@ -25,7 +25,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			throttle = _.debounce,//ko.extenders.throttle,
 			isObservable = ko.isObservable,
 			bindingHandlers = ko.bindingHanders,
-			applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode,
+            // allows for backward compatibility for KO 2.x
+			applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode || function (node, bindings,bindingContext) {
+
+			    var clone = {};
+			    _.each(bindings, function (item, key) {
+			        // ko 2.x requires the items NOT be functions unline ko 3.0
+                    // resolve the bound functions and pass them to the node
+			        clone[key] = item();
+			    });
+
+			    return ko.applyBindingsToNode(node, clone, bindingContext)
+			},
 			elementExists = function(toTest){
 				return (_.isString(toTest) && document.getElementById(toTest)) || _.isElement(toTest)
 			},
@@ -39,7 +50,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			map = _.map,
 			find = _.find,
 			noop = function() {},
-			bindThis = function(toReturn){
+			bindThis = function (toReturn) {
 				return function () { 
 					return this; 
 				}.bind(toReturn);
