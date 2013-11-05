@@ -1,5 +1,6 @@
 { 
 	"name" : "kogrid", 
+	"version" : "0.1.1",
 	"dependencies" : { 
 		"lodash" : "2.x",
 		"minifier" : "0.x"

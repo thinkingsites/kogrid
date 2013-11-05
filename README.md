@@ -1,7 +1,7 @@
 kogrid
 ======
 
-Uses Knockout 3.0.0.
+Requires KO 2.2.0 or higher
 
 **kogrid** is intended to be a grid fully implemented in knockout with full support for observables.  Most of the **options** support observables and are marked *observable* or *observableArray* within this documentation.
 
@@ -32,7 +32,7 @@ Columns are ordered by likelihood of use.
     * **height** - *string or integer, optional* - See **height** in **Global Options**
     * **loading** - *function, optional* - See **loading** in **Global Options**
     * **loaded** - *function, optional* - See **loaded** in **Global Options**
-    * **noRowsText** - *string, required, observable* - See **noRowsText** in **Global Options**
+    * **noRows** - *html string, required, observable* - See **noRowsText** in **Global Options**
     * **dataType** - *string, optional* - See **loaded** in **Global Options**
 		* **type** - *string, optional* - See **loaded** in **Global Options**
     * **sorting** - *object, required* - See **sorting** in **Global Options**
@@ -54,7 +54,7 @@ Columns are ordered by likelihood of use.
 		* **height** - *string or integer, optional* - The default height of the grid. Initially set to <code>auto</code>. 
 		* **loading** - *function, optional* - A function to fire before data is to be loaded onto the screen.  Initially set to dim the <code>opacity</code> of the table to <code>0\.5\</code>.
 		* **loaded** - *function, optional* - A function to fire after data has been rendered onto the screen.  Initially set to restore the <code>opacity</code> of the table to <code>1\</code>.
-		* **noRowsText** - *string, required* - The text to display when there are no rows to display. Initially set to <code>"No rows available."</code>
+		* **noRows** - *html string, required* - The html to display when there are no rows to display. This option does not accept knockout templating. Initially set to <code>"No rows available."</code>
 		* **dataType** - *string, required* - The format to expect when receiving the data from the server. Initally set to <code>json</code>.
 		* **type** -  *string, required* - The HTTP method to use when sending requests to the server. Initally set to <code>GET</code>.		
 		* **sorting** - *object, required* - Contains sorting options.

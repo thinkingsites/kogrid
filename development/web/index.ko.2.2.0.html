@@ -1,0 +1,175 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="styles/reset.css"/>
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
+		<link rel="stylesheet" href="styles/knockout.kogrid.css"/>        
+		<link rel="stylesheet/less" href="styles/readme.less"/>
+		<style type="text/css">
+			#tabs > ul {
+				float:left;
+				width:220px;
+				padding:0;
+				margin:0;
+			}
+			#tabs > div {
+				margin-left:220px;
+			}
+			#tabs > ul a{
+				border:solid 1px #666;
+				background-color:#eee;
+				width:180px;
+				margin-bottom:10px;
+				padding:5px;
+				display:block;
+				text-decoration:none;
+				font-size:16px;
+				-webkit-border-radius:5px;
+				border-radius:5px;
+				color:black;
+				font-weight:bold;
+			}
+			
+			#tabs > ul a.active,
+			#tabs > ul a:hover{
+				background-color:#FFCC66;
+			}
+			
+			#documentation {
+				margin-top:20px;
+				clear:both;
+				border-top:solid 3px black;
+			}
+			
+			code { 
+				font-family:courier,serif; 
+				color:green; border: solid 1px #999; 
+				background-color:#eee; 
+				display:inline-block; 
+				padding:0 3px;
+				-webkit-border-radius:3px;
+				border-radius:3px;
+			}
+		</style>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.8/require.min.js"></script>
+    <script type="text/javascript">
+        // create all my paths
+        var paths = {
+            "text" : "http://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.10/text",
+            "jquery": "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
+            "jqueryui" : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
+            "_" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
+            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.2.0/knockout-min",
+            "mockjax" : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
+            "markdown" : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
+            "lesscss" : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
+            "mockjax.settings" : "scripts/mockjax.settings",
+            "kogrid" : "scripts/knockout.kogrid"
+        };
+
+        require.config({
+        		basePath : "/",
+            paths: paths,
+            shim : {
+                jqueryui : ["jquery"],
+                mockjax : {
+                     deps: ['jquery',"_"],
+                     exports: 'jQuery.fn.mockjax'
+                },
+            },
+            // dynamically load all paths as dependancies
+            deps: (function () {
+                var keys = [];
+                for (var k in paths) keys.push(k);
+                return keys;
+            }())
+        });
+
+        require(["jquery","knockout","jqueryui"],function($,ko){
+          	$(function () {
+            	// set up tabs
+				$("#tabs > ul a").on("click",function(){
+					var 
+						self = $(this),
+						id = self.attr("href").slice(1),
+						panel = $("#" + id);
+					if(panel.length == 0) {
+						$("#tabs > ul a.active").removeClass("active");
+						$("#tabs > div").hide();
+						self.addClass("active");
+						
+						panel = $("<div></div>").attr("id",id).appendTo("#tabs");
+						require(["text!examples/" + id + "/view.html","examples/" + id + "/viewmodel"],function(html,viewmodel){
+							panel.html(html);
+							ko.applyBindings(viewmodel,panel[0]);
+						});
+					} else if(panel.is(":hidden")){
+						$("#tabs > ul a.active").removeClass("active");
+						$("#tabs > div").hide();
+						self.addClass("active");
+						panel.show();
+					}
+				})
+				
+				var toTrigger = $("#tabs > ul a[href='" + document.location.hash + "']");
+				
+				if(toTrigger.length == 0)
+					toTrigger = $("#tabs > ul li:first a");
+					
+				toTrigger.first().trigger("click");
+						
+	            // load documentation
+	            $.ajax({
+	                url: "readme.md",
+	                type: "get",
+	                dataType: "text"
+	            }).done(function (markdown) {
+	                try {
+	                    var converter = new Markdown.Converter();
+	                    $("#documentation").html(converter.makeHtml(markdown));
+	                } catch (e) {
+	                    console.error(markdown);
+	                    console.error(e);
+	                    $("#documentation").html("<div style='color:red;text-align:center;font-size:20px;'>Documentation did not load.</div>")
+	                }
+	            });
+      		});
+    	});
+		</script>
+        <style>
+            h1,h2,h3,h4,h5,h6 { font-weight:bold; }
+            h1 { font-size: 18px; }
+            h2 { font-size: 16px; }
+            h3 { font-size: 14px; }
+            ul { margin-left:20px; line-height:18px; }
+            .orange { background-color : orange; }
+            .hover:hover { background-color : #00FF00; }
+            .ko-grid-head { text-align:center; }
+            .ko-grid-sort-icon { 
+                width:20px;
+                height:20px;
+                text-indent:100%;   
+                overflow:hidden;
+                margin-left:10px;
+            } 
+            #tabs h1,
+            #tabs p            
+            {
+            	margin-bottom:20px;	
+            }
+        </style>
+	</head>
+	<body style="margin:20px;font-size:12px;font-family:sans-serif;">
+		<div id="wub"></div>
+        <div id="tabs">
+            <ul>
+                <li><a href="#manualrows">Manual Rows</a></li>
+                <li><a href="#norows">No Rows</a></li>
+                <li><a href="#rownumbers">Row Numbers</a></li>
+                <!--<li><a href="#groupingungrouped">Grouping - Ungrouped</a></li>-->
+                <!--<li><a href="#groupingpregrouped">Grouping - Pregrouped data</a></li>-->
+                <li><a href="#kitchensink">Kitchen Sink</a></li>
+            </ul>
+        </div>
+        <div id="documentation"></div>
+	</body>
+</html>
