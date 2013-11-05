@@ -105,7 +105,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    forceAdd = options.addjQueryUiSortingIcons === true,
 			    // sniff out whether jQuery UI exists
 			    jQueryUiExists = $.ui || _.any(document.styleSheets,function(stylesheet){
-			        return _(stylesheet.rules).filter(function () {
+			        return _(stylesheet.rules).filter(function (rule) {
 			            return rule.selectorText;
 			        }).map(function(rule){
 						return rule.selectorText.slice(1);
