@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			throttle = _.debounce,//ko.extenders.throttle,
 			isObservable = ko.isObservable,
 			bindingHandlers = ko.bindingHanders,
+			observable = ko.observable,
+			computed = ko.computed,
             // allows for backward compatibility for KO 2.x
 			applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode || function (node, bindings,bindingContext) {
 
@@ -40,8 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			elementExists = function(toTest){
 				return (_.isString(toTest) && document.getElementById(toTest)) || _.isElement(toTest)
 			},
-			extend =_.extend,
-			observable = ko.observable,
+			extend = _.extend,
 			win = window,
 			each = _.each,
 			isFunction = _.isFunction,
@@ -150,15 +151,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	self.pageSize = makeObservable(self.pageSize);
 		    	self.pageIndex = makeObservable(self.pageIndex);
 		    	self.url = makeObservable(self.url);
+		    	self.rowClick = function (data,event) {
+		    	    var callback = this;
+		    	    if (callback) {
+		    	        callback.call(data, data, event);
+		    	    }
+		    	}.bind(self.rowClick);
 		    	self.isString = isString;
-		    	self.any = function(){
+		    	self.any = computed(function(){
 		    		var r = getObservable(self.rows);
 		    		return !(_.isUndefined(r) || r.length == 0);
-		    	};
-		    	self.none = function(){
+		    	});
+		    	self.none = computed(function(){
 		    		var r = getObservable(self.rows);
 		    		return _.isUndefined(r) || r.length == 0;
-		    	};
+		    	});
 				self.resizeHeaders = function(){ 
 					// try and find a way to do this without ajax   		
 					var 
@@ -275,7 +282,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				};
 			    
 		    	if (!isObservable(self.total)) {
-		    	    self.total = ko.computed({
+		    	    self.total = computed({
 		    	        read: function () {
 		    	            if (isNumber(_totalRows)) {
 		    	                return _totalRows;
@@ -291,7 +298,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    	    });
 		    	}
 	
-		    	self.totalPages = ko.computed(function () {
+		    	self.totalPages = computed(function () {
 		    	    var
 						totalRows = self.total(),
 						pageSize = self.pageSize();
@@ -331,7 +338,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 				};
 				
 	    		self.goToPageText = observable();
-		    	
+
 		    	// any time the window size changes, re-render the headers
 		    	windowSize.subscribe(self.resizeHeaders);
 		    
@@ -410,7 +417,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		
 		    		// if the grid is populated by a fixed array
 		    		var _rows = makeObservable(self.rows);
-		    		self.rows = ko.computed({
+		    		self.rows = computed({
 		    			read : function(){
 			    			var 
 			    				pageSize = self.pageSize(),
@@ -500,7 +507,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	cssClass: "ko-grid-table"
 			    },
 			    row : {
-			    	template : "<tr data-bind='foreach : $root.columns, css : $index()%2 ? $root.classes.row + \"-even\" : $root.classes.row + \"-odd\" '></tr>",
+			    	template : "<tr data-bind='foreach : $root.columns, click : $root.rowClick, css : $index()%2 ? $root.classes.row + \"-even\" : $root.classes.row + \"-odd\" '></tr>",
 			    	cssClass: "ko-grid-row"
 			    },
 			    cell : {
@@ -548,7 +555,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	cssClass: "ko-grid-total-text"
 			    },
 				noRows :{
-			    	template : "<div></div>",
+			    	template : "<div data-bind='visible : none,html: noRows'></div>",
 			    	cssClass: "ko-grid-no-rows"
 			    }
 		    };
@@ -615,7 +622,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			}
 		},
 		kogrid : {
-			init : function(element, valueAccessor){
+			init : function(element, valueAccessor,allbindings,vm,bindingContext){
 				$(function(){
 			    	var 	    		
 			    		// set up local settings
@@ -641,6 +648,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
 		    		rows = addElement(table,'row'),
 		    		cells = addElement(rows,'cell'),
+                    norows = addElement(scrollContainer,'noRows'),
 		    		pager,first,previous,next,last,refresh,goToPage;
 			    	
 			    	if(viewModel.pager){
@@ -679,36 +687,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	appendjQueryUISortingIcons(viewModel);
 			
 			    	ko.applyBindingsToDescendants(viewModel,element);
-			
-					// set up the 'no rows' element
-		    		var 
-		    			norowsElement = addElement(scrollContainer,'noRows'),
-		    			norowsAccessor = {
-			    			visible : bindThis(viewModel.none),
-			    			template : bindThis({
-			    				// if no rows is an observable the template will handle this automatically
-			    				name : function(){
-			    					var template = getObservable(viewModel.noRows);
-			    					return elementExists(template) ? template : viewModel.templates[template];
-			    				},
-			    				// pass in the original viewmodel object
-			    				data : value
-			    			})
-			    		};
-			    	
-			    	// make the default template for the no rows object
-			    	makeTemplate(getObservable(viewModel.noRows))			    	
-			    	
-			    	// if the no rows is an observable, allow it to add new templates to the templates list
-			    	if(isObservable(viewModel.noRows)){
-			    		viewModel.noRows.subscribe(function(newval){
-			    			if(!viewModel.templates[newval]){
-			    				makeTemplate(newval);
-			    			}
-			    		});
-			    	}
-			    	
-		    		applyBindingAccessorsToNode(norowsElement[0],norowsAccessor);
 			
 					// expose the grid utilities
 					value.utils = extend({},value.utils,{
