@@ -59,6 +59,7 @@
                         viewmodel.checkedRows(checked.join(", "));
                     },
                     multiple: true,
+                    id : "name"
                     //header : true,
                     //checkOnRowClick : true
                 }

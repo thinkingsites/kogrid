@@ -486,29 +486,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		                var
                             index = context.$index(),
                             context = extend({}, context, makeContextVariables(self, -1, index));
-		                return context["$recordIndex"];
+
+		                return self.checkbox.id ? context.$data[self.checkbox.id] : context.$recordIndex;
 		            },
 		            change: function (data,event) {
 		                var
                             result = true,
                             callback = self.checkbox.change,
                             index = this.$index(),
-                            // this code is duplicated, above.  reuse it.
                             context = extend({}, this, makeContextVariables(self, -1, index));
 
-
 		                // add or remove the record index from the checked rows
-		                _checkedRows[$(event.target).is(":checked") ? "push" : "remove"](context.$recordIndex());
+		                if($(event.target).is(":checked")) {
+		                    _checkedRows.push({
+		                        i : context.$recordIndex(),
+                                v : $(event.target).val()
+		                    })
+		                } else {
+		                    _checkedRows.remove(function(item){
+		                        return item.i == context.$recordIndex()
+		                    });
+		                }
 
 		                // if the checkbox does not allow multiple by default remove all checks first
 		                if (!self.checkbox.multiple) {
+                            // get only the checked item
 		                    var filtered = _.filter(_checkedRows.peek(), function (item) {
-		                        return item == context.$recordIndex();
+		                        return item.i == context.$recordIndex();
 		                    });
+                            // set the checked rows to only the checked item
 		                    _checkedRows(filtered);
 		                }
 
-
+                        // if there is a callback, invoke it
 		                if (isFunction(callback)) {
 		                    result = callback.call(context.$data, context.$data, event, context);
 		                }
@@ -517,7 +527,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		                return result === false ? false : true;
 		            },
 		            checked: function (index) {
-		                return _.contains(_checkedRows(), recordIndex(self,index));
+		                return _.find(_checkedRows(), function (item) {
+		                    return item.i == recordIndex(self, index)
+		                });
 		            },
 		            rows: _checkedRows
 		    	};
@@ -653,9 +665,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 					templateName = root.templates[column.template],
 					bindingAccessors = {
 						visible : root.isColumnVisible.bind(column)
-					};				
-
-				
+					};
 
 				if(templateName){
 					// if there is a template, bind it and display the template
@@ -755,10 +765,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	});
 			    	
 			    	appendjQueryUISortingIcons(viewModel);
-			
-			    	var bob = bindingContext.extend({
-			    	    $dummy: "asdfasdf"
-			    	});
 
 			    	ko.applyBindingsToDescendants(viewModel,element);
 			
@@ -769,10 +775,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						goToPage: function(pageIndex){
 						    viewModel.pageIndex(pageIndex);
 						},
-						getChecked: function () {
-						    return viewModel.cb.rows();
+						getChecked: function (getIndexes) {
+						    var recordIndexes = _.sortBy(viewModel.cb.rows(),"i");
+						    return map(recordIndexes, function (item) {
+						        return getIndexes ? item.i : item.v;
+						    });
 						},
-						toggleCheck: function (recordIndex) { },
+						//toggleCheck: function (recordIndex) { },
 						checkedAll: function () {
 						    viewModel.cb.rows(_.times(viewModel.total()));
 						},
