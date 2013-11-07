@@ -1,6 +1,6 @@
 <h1>Row Numbers</h1>
 <p>In this example we're using a custom template to display row and column numbers.</p>
-<p>Each cell template has exposed it two new bindingContext functions: <code>$rowIndex()</code> and <code>$columnIndex()</code> that return the index of the row and columns respectively.</p>
+<p>Each cell template has exposed it two new bindingContext functions: <code>$rowIndex()</code> , <code>$columnIndex()</code> and <code> $recordIndex() </code> that return the row's index relative to the grid, column's index, and the record's index within the entire dataset.</p>
 <p>Note that row and column numbers are zero based indexes.</p>
 
 <div data-bind="kogrid : $data"></div>	

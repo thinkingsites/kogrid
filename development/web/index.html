@@ -58,7 +58,7 @@
             "jquery": "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
             "jqueryui" : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
             "_" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
-            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/3.0.0/knockout-min",
+            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.2.0/knockout-min",
             "mockjax" : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
             "markdown" : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
             "lesscss" : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
@@ -84,11 +84,12 @@
             }())
         });
 
-        require(["jquery", "knockout", "jqueryui"], function ($, ko) {
+        require(["jquery", "knockout","_", "jqueryui"], function ($, ko, _) {
 
             // expose these at the window level so we have them for debugging
             window.ko = ko;
             window.$ = $;
+            window.$ = _;
 
 
           	$(function () {
@@ -169,9 +170,11 @@
         <div id="tabs">
             <ul>
                 <li><a href="#manualrows">Manual Rows</a></li>
+                <li><a href="#map">Map</a></li>
                 <li><a href="#norows">No Rows</a></li>
                 <li><a href="#rownumbers">Row Numbers</a></li>
                 <li><a href="#rowclick">Row Click</a></li>
+                <li><a href="#checkboxes">Row Checkboxes</a></li>
                 <!--<li><a href="#groupingungrouped">Grouping - Ungrouped</a></li>-->
                 <!--<li><a href="#groupingpregrouped">Grouping - Pregrouped data</a></li>-->
                 <li><a href="#kitchensink">Kitchen Sink</a></li>
