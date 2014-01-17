@@ -43,27 +43,21 @@
     ],'name');
 	
     var viewmodel = {
-        checkedRows : ko.observable(),
         gridOptions : {
-                rows : rows,
-                height: "300px",
-                columns: ko.observableArray([
-                    { title: "Name", key: "name" },
-                    { title: "Address", key: "address" },
-                    { title: "Phone", key: "phone" },
-                    { title: "Age", key: "age", style: { width: "50px", "text-align": "center" } }
-                ]),
-                checkbox: {
-                    change : function(event,data,context){
-                        var checked = viewmodel.gridOptions.utils.getChecked();
-                        viewmodel.checkedRows(checked.join(", "));
-                    },
-                    multiple: true,
-                    id : "name"
-                    //header : true,
-                    //checkOnRowClick : true
-                }
+            rows : rows,
+    		checkedRows : ko.observableArray(),
+            height: "300px",
+            columns: ko.observableArray([
+                { title: "Name", key: "name"},
+                { title: "Address", key: "address" },
+                { title: "Phone", key: "phone" },
+                { title: "Age", key: "age", style: { width: "50px", "text-align": "center" } }
+            ]),
+            checkbox: {
+                multiple: true, 
+                id : "name"
             }
+        }
     };
 
     return viewmodel;

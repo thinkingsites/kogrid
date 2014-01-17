@@ -1,4 +1,8 @@
 ﻿<h1>Checkboxes</h1>
 <p></p>
-<p>Checked Rows: <strong data-bind="text : checkedRows"></strong></p>
+<p>Checked Rows: 
+	<ul data-bind="foreach : gridOptions.checkedRows" style="list-style-type:disc;">
+		<li data-bind="text : ko.toJSON($data) "></li>
+	</ul>
+</p>
 <div data-bind="kogrid : gridOptions"></div>	

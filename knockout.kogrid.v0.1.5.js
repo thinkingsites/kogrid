@@ -500,7 +500,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		                if($(event.target).is(":checked")) {
 		                    _checkedRows.push({
 		                        i : context.$recordIndex(),
-                                v : $(event.target).val()
+                                v : context.$data//$(event.target).val()
 		                    })
 		                } else {
 		                    _checkedRows.remove(function(item){
@@ -533,7 +533,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		            },
 		            rows: _checkedRows
 		    	};
-
+				
+				
+				if(isObservable(self.checkedRows)){
+					_checkedRows.subscribe(function(newval){
+						var recordIndexes = _.sortBy(_checkedRows(),"i");
+					    var result = map(recordIndexes, function (item) {
+					        return item.v;
+					    });
+					    self.checkedRows(result);
+					});
+				}
 		    },
 		    cellTemplateId = 'ko-grid-default-cell-template',
 		    defaultOptions = {
@@ -775,6 +785,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 						goToPage: function(pageIndex){
 						    viewModel.pageIndex(pageIndex);
 						},
+						// this should not be made a computed because it uses an argument
 						getChecked: function (getIndexes) {
 						    var recordIndexes = _.sortBy(viewModel.cb.rows(),"i");
 						    return map(recordIndexes, function (item) {
