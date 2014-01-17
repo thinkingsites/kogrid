@@ -487,7 +487,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                             index = context.$index(),
                             context = extend({}, context, makeContextVariables(self, -1, index));
 
-		                return self.checkbox.id ? context.$data[self.checkbox.id] : context.$recordIndex;
+		                return self.id ? context.$data[self.id] : context.$recordIndex;
 		            },
 		            change: function (data,event) {
 		                var
@@ -526,10 +526,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 		                // only block the callback if it explicitly returns false.
 		                return result === false ? false : true;
 		            },
-		            checked: function (index) {
-		                return _.find(_checkedRows(), function (item) {
-		                    return item.i == recordIndex(self, index)
-		                });
+		            checked: function (context) {
+		            	var callback;
+		            	if(self.id){
+		            		callback = function(item){
+		                    	return item.v[self.id] == context.$data[self.id];
+		            		};
+		            	} else {
+		            		callback = function (item) {
+			                    return item.i == recordIndex(self, context.$index())
+			                };
+		            	}
+		            	
+		                return _.find(_checkedRows(),callback);
 		            },
 		            rows: _checkedRows
 		    	};
@@ -646,7 +655,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 			    	cssClass: "ko-grid-no-rows"
 				},
 				checkbox: {
-				    template: "<td style='text-align:center' data-bind='visible : $root.cb.visible'><input type='checkbox' data-bind='checked : $root.cb.checked($index()), value: $root.cb.value($context), event : { click : $root.cb.change.bind($context) }'/></td>",
+				    template: "<td style='text-align:center' data-bind='visible : $root.cb.visible'><input type='checkbox' data-bind='checked : $root.cb.checked($context), value: $root.cb.value($context), event : { click : $root.cb.change.bind($context) }'/></td>",
 				    cssClass: "ko-grid-checkbox"
 				}
 		    };

@@ -11,6 +11,7 @@ Columns are ordered by likelihood of use.
 * <h2>Options</h2> - These are the settings that are individually configurable on the grid. 
     * **url** - *string, observable, conditionally required* - The url where the data will be summoned from.  If set to an observable the grid will refresh whenever the observable changes.  This is conditionally required; either this or the **rows** property are required.</li>
     * **data** *object, observable, optional* - The data that gets passed to the server on every grid load and refresh.  **data** accepts observables which are resolved with every ajax request.   
+    * **id** - *string, optional* - Specifies the object key to use as the unique row idenifier.  Is <code>undefined</code> by default.  If not set, rows are uniquely identified by the index within the dataset and may cause issues when the dataset changes.
     * **columns** - *array, observableArray, optional* - The column definitions.  If this is an observable, the rendered columns can be changed dynamically.
         * **title** - *string, observable, optional* -  The header text for the column.  If not provided the **key** will be used as the column header.
         * **template** - *string, observable, optional* - A string for the templateID to use or an html template.  If not defined the column will use a default text template.
@@ -23,7 +24,6 @@ Columns are ordered by likelihood of use.
     * **checkedRows** - *observable only, optional* - If **checkedRows** is defined as an observable, and checkboxes are turned on, this observable is populated with the checked items.  The observable, for all intents and purposes becomes read only.  Updating the observable will not affect the grid, and updates will be overwritten on future data changes.
     * **checkbox** - *boolean or object, optional* - If set to true or an object the grid will display checkboxes.  As an object it exposes options
     	* **multiple** - *boolean, optional* - If set to true the grid will allow multiple checboxes to be clicked at the same time.  Initially set <code>false</code>.
-    	* **id** - *string, optional* - Specifies the object key to use for the unique row idenifier.
     	* **change** - *function, optional* - This is an event that fires when a checkbox is checked.  Its arguments are, in order: the data for the checked row, the event object, the knockout context.
     * **total** - *integer, observable, optional* If **url** is not used, the total number of rows can be passed in directly, otherwise will default to the current number of rows in **rows**.
     * **done** - *function, optional* - Will be fired after the grid has been rendered and any time the grid data is changed.

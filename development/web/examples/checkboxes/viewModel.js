@@ -45,6 +45,7 @@
     var viewmodel = {
         gridOptions : {
             rows : rows,
+            id : "name",
     		checkedRows : ko.observableArray(),
             height: "300px",
             columns: ko.observableArray([
@@ -55,7 +56,6 @@
             ]),
             checkbox: {
                 multiple: true, 
-                id : "name"
             }
         }
     };
