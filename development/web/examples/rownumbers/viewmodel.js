@@ -1,4 +1,4 @@
-define(["knockout","_"], function (ko,_) {
+define(["knockout","lodash"], function (ko,_) {
 	
 	// this is just dummy data in an array, the data we're displaying in this grid is all template based
     var rows = [

@@ -2,7 +2,7 @@
 	<head>
 		<link rel="stylesheet" href="styles/reset.css"/>
 		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css"/>
-		<link rel="stylesheet" href="styles/knockout.kogrid.css"/>        
+		<link rel="stylesheet" href="styles/kogrid.css"/>        
 		<link rel="stylesheet/less" href="styles/readme.less"/>
 		<style type="text/css">
 			#tabs > ul {
@@ -55,15 +55,15 @@
         // create all my paths
         var paths = {
             "text" : "http://cdnjs.cloudflare.com/ajax/libs/require-text/2.0.10/text",
-            "jquery": "http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min",
+            "jquery": "http://code.jquery.com/jquery-1.11.0.min",
             "jqueryui" : "http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min",
-            "_" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
-            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/2.2.0/knockout-min",
+            "lodash" : "http://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.1.0/lodash.min",
+            "knockout" : "http://cdnjs.cloudflare.com/ajax/libs/knockout/3.1.0/knockout-min",
             "mockjax" : "http://cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.2/jquery.mockjax.min",
             "markdown" : "http://cdnjs.cloudflare.com/ajax/libs/pagedown/1.0/Markdown.Converter",
             "lesscss" : "http://cdnjs.cloudflare.com/ajax/libs/less.js/1.4.1/less.min",
             "mockjax.settings" : "scripts/mockjax.settings",
-            "kogrid" : "scripts/knockout.kogrid"
+            "kogrid" : "scripts/kogrid"
         };
 
         require.config({
@@ -72,7 +72,7 @@
             shim : {
                 jqueryui : ["jquery"],
                 mockjax : {
-                     deps: ['jquery',"_"],
+                     deps: ['jquery',"lodash"],
                      exports: 'jQuery.fn.mockjax'
                 },
             },
@@ -84,12 +84,12 @@
             }())
         });
 
-        require(["jquery", "knockout","_", "jqueryui"], function ($, ko, _) {
+        require(["jquery", "knockout","lodash", "jqueryui"], function ($, ko, _) {
 
             // expose these at the window level so we have them for debugging
             window.ko = ko;
             window.$ = $;
-            window.$ = _;
+            window._ = _;
 
 
           	$(function () {

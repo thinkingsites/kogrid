@@ -1,8 +1,15 @@
-{ 
+{
 	"name" : "kogrid", 
-	"version" : "0.1.1",
-	"dependencies" : { 
+	"version" : "0.1.6",
+	"dependencies" : 
+	{ 
 		"lodash" : "2.x",
-		"minifier" : "0.x"
-	} 
+		"minifier" : "0.x",
+		"grunt": "~0.4.2",
+		"grunt-contrib-concat": "~0.4.0",
+		"grunt-contrib-jshint": "~0.6.3",
+		"grunt-contrib-nodeunit": "~0.2.0",
+		"grunt-contrib-uglify": "~0.2.2",
+		"grunt-contrib-less": "~0.11.0"
+	}
 }

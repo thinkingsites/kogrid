@@ -1,4 +1,4 @@
-﻿define(["knockout","mockjax.settings"], function (ko) {
+﻿define(["jquery","knockout","mockjax.settings"], function ($,ko) {
     var viewmodel = {
         url: 'sampledata',
         height: "500px",

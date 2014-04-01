@@ -1,4 +1,4 @@
-﻿define(["knockout","_"], function (ko,_) {
+﻿define(["knockout","lodash"], function (ko,_) {
 	var rows = _.sortBy([
 		{ "name": "Orr, Kyla N.", "address": "P.O. Box 939, 7880 Dui. Road", "phone": "1-932-653-7795", "age": 47 },
 		{ "name": "Combs, Fulton G.", "address": "Ap #870-4013 Facilisi. St.", "phone": "1-986-633-1871", "age": 67 },
