@@ -45,8 +45,8 @@ var
 		return isObservable(obs) ? obs.peek() : obs;
 	},
 	windowSize=  observable({
-		h:  $(win).height(),
-		w: $(win).width()
+		h:  window.screen.height,	// $(win).height(),
+		w: window.screen.width		// $(win).width()
 	}),
 	generateRandomId=  function(){
 		return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();
@@ -84,7 +84,7 @@ var
 	    // if the sorting icons have been set explicitly to true, force the addition
 	    forceAdd = options.addjQueryUiSortingIcons === true,
 	    // sniff out whether jQuery UI exists
-	    jQueryUiExists = $.ui || _.any(document.styleSheets,function(stylesheet){
+	    jQueryUiExists = (win.jQuery && win.jQuery.ui) || _.any(document.styleSheets,function(stylesheet){
 	        return _(stylesheet.rules).filter(function (rule) {
 	            return rule.selectorText;
 	        }).map(function(rule){

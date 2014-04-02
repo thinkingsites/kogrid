@@ -1,4 +1,11 @@
 var ViewModel = function(viewModel,element,classes){
+
+    // validate options as they come in
+    if(!viewModel.url && !viewModel.rows) {
+        throw "kogrid: Either 'url' or 'rows' must be defined in the grid options";
+    }
+
+
     var 
     	self = this,
     	_totalRows,
@@ -77,6 +84,7 @@ var ViewModel = function(viewModel,element,classes){
         };					
     };
 	
+    // self.afterRender doesn't fire when unit testing the viewModel, only if the grid has been data bound to an element
     self.afterRender = throttle(function(){
         self.resizeHeaders();
         sizeGridContainer(self.element,self.height.peek());
@@ -295,7 +303,11 @@ var ViewModel = function(viewModel,element,classes){
         }
       
         self.url.subscribe(self.refresh);
-        self.refresh();
+
+        // only auto load the grid if the autoLoad option is set to truthy
+        if(self.autoLoad){
+            self.refresh();
+        }
     } else {
         self.refresh = noop;
 		

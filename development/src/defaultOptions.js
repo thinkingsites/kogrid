@@ -6,13 +6,18 @@ var
 	    pageIndex:1,
 	    pager: true,
 	    height: "auto",
+	    autoLoad  : true,
 	    loading: function (element) {
 	    	$("table", element).css({ opacity: 0.5 });
 	    },
 	    loaded: function (element) {
 	    	$("table", element).css({ opacity: 1 });
 	    },
-	    noRows: "No rows available",
+	    messages : {
+	    	initial : "", 
+	    	noRows : "No rows available",
+	    	loading : "Loading..."
+	    },
         checkbox : false,
         sorting : {
 			allowMultiSort : false,

@@ -4,11 +4,13 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     vars : {
+      buildFolder : 'build/',
+      buildFileName : '<%= pkg.name %>',
+      buildFileAndFolder : '<%= vars.buildFolder %><%= vars.buildFileName %>',
+      buildLessPath : '<%= vars.buildFileAndFolder %>.less',
+      buildCssPath : '<%= vars.buildFileAndFolder %>.min.css',
       releaseFolder : '../release/v<%= pkg.version %>/',
-      fileName : '<%= pkg.name %>-<%= pkg.version %>',
-      fileAndFolder : '<%= vars.releaseFolder %><%= vars.fileName %>',
-      lessPublishPath : '<%= vars.fileAndFolder %>.less',
-      cssPublishPath : '<%= vars.fileAndFolder %>.min.css'
+      releaseFileAndFolder : '../release/v<%= pkg.version %>/<%= pkg.name %>-<%= pkg.version %>'
     },
     concat : {
       options : {
@@ -16,7 +18,7 @@ module.exports = function(grunt) {
       },
       default : {
         files: {
-          '<%= vars.fileAndFolder %>.js' : [
+          '<%= vars.buildFileAndFolder %>.js' : [
             'src/header.fragment',
             'src/alias.js',
             'src/viewModel.js',
@@ -28,24 +30,35 @@ module.exports = function(grunt) {
             'src/footer.fragment',
           ],
           // copy over the read me and the license as well
-          '<%= vars.releaseFolder %>readme.md' : ['src/readme.md'],
-          '<%= vars.releaseFolder %>gpl-3.0.txt' : ['src/gpl-3.0.txt'],
+          '<%= vars.buildFolder %>readme.md' : ['src/readme.md'],
+          '<%= vars.buildFolder %>gpl-3.0.txt' : ['src/gpl-3.0.txt'],
           // copy over the raw css file as well
-          '<%= vars.lessPublishPath %>' : ['src/styles.less' ],
+          '<%= vars.buildLessPath %>' : ['src/styles.less' ],
         }
       },
       demo : {
         // once everything is compiled, take the latest pub and push it to the web demo folder
         files : {
-          'web/styles/kogrid.css' : ['<%= vars.cssPublishPath %>'],
-          'web/scripts/kogrid.js' : ['<%= vars.fileAndFolder %>.js']
+          'web/styles/kogrid.css' : ['<%= vars.buildCssPath %>'],
+          'web/scripts/kogrid.js' : ['<%= vars.buildFileAndFolder %>.js']
+        }
+      },
+      release : {
+        files : {
+          // copy all files over to the release folder
+          '<%= vars.releaseFolder %>gpl-3.0.txt' : ['<%= vars.buildFolder %>gpl-3.0.txt'],
+          '<%= vars.releaseFolder %>readme.md' : ['<%= vars.buildFolder %>readme.md'],
+          '<%= vars.releaseFileAndFolder %>.less' : ['<%= vars.buildFileAndFolder %>.less'],
+          '<%= vars.releaseFileAndFolder %>.min.css' : ['<%= vars.buildFileAndFolder %>.min.css'],
+          '<%= vars.releaseFileAndFolder %>.js' : ['<%= vars.buildFileAndFolder %>.js'],
+          '<%= vars.releaseFileAndFolder %>.min.js' : ['<%= vars.buildFileAndFolder %>.min.js'],
         }
       }
     },
     uglify: {
-      my_target : {
+      default : {
         files : {
-          '<%= vars.fileAndFolder %>.min.js' : ['<%= vars.fileAndFolder %>.js' ]
+          '<%= vars.buildFileAndFolder %>.min.js' : ['<%= vars.buildFileAndFolder %>.js' ]
         }
       },
       options: {
@@ -71,16 +84,17 @@ module.exports = function(grunt) {
           compress : true
         },
         files : {
-          '<%= vars.fileAndFolder %>.min.css' : ['src/styles.less' ]
+          '<%= vars.buildFileAndFolder %>.min.css' : ['src/styles.less' ]
         }
       }
     }
   });
 
-  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-contrib-concat');
 
-  grunt.registerTask('default', ['concat','uglify','less','concat:demo']);
+  grunt.registerTask('default', ['concat:default','uglify:default','less:default']);
+  grunt.registerTask('demo', ['concat:default','uglify:default','less:default','concat:demo']);
+  grunt.registerTask('release', ['concat:default','uglify:default','less:default','concat:demo','concat:release']);
 };
