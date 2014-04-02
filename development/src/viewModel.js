@@ -94,7 +94,7 @@ var ViewModel = function(viewModel,element,classes){
         self.resizeHeaders();
         sizeGridContainer(self.element,self.height.peek());
         if(isFunction(self.done)){
-            self.done(element)
+            self.done(element,self.utils)
         }
     },10);
 		
@@ -243,7 +243,7 @@ var ViewModel = function(viewModel,element,classes){
         // if the grid is an ajax grid, make rows a simple observable
         self.rows = makeObservable(self.rows);
         self.refresh = function () {
-            
+
             // if there is a loading function, fire it
             if (isFunction(self.loading)) {
                 // pass in the element and the old rows
@@ -435,7 +435,32 @@ var ViewModel = function(viewModel,element,classes){
         rows: _checkedRows
 	};
 	
-	
+    // create the raw utils object for the grid
+    this.utils = {
+        fixHeaders: self.resizeHeaders,
+        refresh: self.refresh,
+        goToPage: function(pageIndex){
+            self.pageIndex(pageIndex);
+        },
+        // this should not be made a computed because it uses an argument
+        getChecked: function (getIndexes) {
+            var recordIndexes = _.sortBy(self.cb.rows(),"i");
+            return map(recordIndexes, function (item) {
+                return getIndexes ? item.i : item.v;
+            });
+        },
+        //toggleCheck: function (recordIndex) { },
+        checkedAll: function () {
+            self.cb.rows(_.times(self.total()));
+        },
+        uncheckAll: function () {
+            return self.cb.rows.removeAll();
+        },
+        element: function () {
+            return element;
+        }
+    };
+
 	if(isObservable(self.checkedRows)){
 		_checkedRows.subscribe(function(newval){
 			var recordIndexes = _.sortBy(_checkedRows(),"i");

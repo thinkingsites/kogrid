@@ -70,31 +70,8 @@ bindingHandlers['kogrid'] = {
 
 	    	ko.applyBindingsToDescendants(viewModel,element);
 	
-			// expose the grid utilities
-			value.utils = extend({},value.utils,{
-				fixHeaders: viewModel.resizeHeaders,
-				refresh: viewModel.refresh,
-				goToPage: function(pageIndex){
-				    viewModel.pageIndex(pageIndex);
-				},
-				// this should not be made a computed because it uses an argument
-				getChecked: function (getIndexes) {
-				    var recordIndexes = _.sortBy(viewModel.cb.rows(),"i");
-				    return map(recordIndexes, function (item) {
-				        return getIndexes ? item.i : item.v;
-				    });
-				},
-				//toggleCheck: function (recordIndex) { },
-				checkedAll: function () {
-				    viewModel.cb.rows(_.times(viewModel.total()));
-				},
-				uncheckAll: function () {
-				    return viewModel.cb.rows.removeAll();
-				},
-				element: function () {
-				    return element;
-				}
-			});
+			// expose the grid utilities, merge them so we keep the original reference if there was a utils object passed in
+			value.utils = extend(value.utils || {},viewModel.utils);
 	    });
 			
 		return { controlsDescendantBindings : true };
