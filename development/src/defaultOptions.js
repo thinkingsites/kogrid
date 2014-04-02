@@ -7,6 +7,7 @@ var
 	    pager: true,
 	    height: "auto",
 	    autoLoad  : true,
+	    async : true,
 	    loading: function (element) {
 	    	$("table", element).css({ opacity: 0.5 });
 	    },

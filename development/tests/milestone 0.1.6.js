@@ -10,13 +10,16 @@
 			{ id : 1, value : Math.random() },
 		]
 	};
+	var makeAjaxUrl = function (argument) {
+		return "ajax" + Math.floor(Math.random() * 10000000).toString();
+	};
 
 	module("milestone v0.1.6");
 	asyncTest("Add auto load option - testing for true.",function(){
 		expect(2);
 
 		var 
-			dummyUrl = 'test-auto-load-for-true', // must have unique URLs for async tests
+			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
 				responseTime : 1,
@@ -39,7 +42,7 @@
 		// give the ajax call 100 milliseconds to fire the viewModel.afterRender manually
 		setTimeout(function(){
 			viewModel.afterRender();
-			$.mockjax(mockAjax);
+			$.mockjaxClear(mockAjax); // clean up
 			start();
 		},10);
 	});
@@ -49,7 +52,7 @@
 		expect(1);
 
 		var 
-			dummyUrl = 'test-auto-load-for-false', // must have unique URLs for async tests
+			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
 				responseTime : 1,
@@ -71,20 +74,81 @@
 		// give the ajax call 100 milliseconds to fire the viewModel.afterRender manually
 		setTimeout(function(){
 			viewModel.afterRender();
-			$.mockjax(mockAjax);
+			$.mockjaxClear(mockAjax); // clean up
 			start();
 		},10);
 	});
 
+	test("Messages display on different states - initial message",function(){
+		var 
+			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
+			options = {
+				url : dummyUrl, // we're testing ajax, use a url
+				autoLoad : false, // we're going to turn off auto load so we can test the inital message,
+				messages : {
+					initial : "This is my initial message."
+				},
+				done : function (argument) {
+					ok(true,"done hit.");
+				}
+			},
+			viewModel = new ViewModel(options,undefined,{}); // instantiate a new view model
 
-	test("Messages display on different states.",function(){
-
+		equal(viewModel.noneText(),options.messages.initial, "none text matches 'initial' message.");
 	});
 
+	test("Messages display on different states - no rows message",function(){
+		var 
+			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
+			mockAjax = $.mockjax({
+				url : dummyUrl,
+				responseText : { rows : [], total : 0 }
+			}),
+			options = {
+				url : dummyUrl, // we're testing ajax, use a url
+				autoLoad : true, // auto load for this test,
+				async : false,
+				messages : {
+					initial : "unexpected value, initial message",
+					noRows : "exepected value"
+				}
+			};
+		var viewModel = new ViewModel(options,undefined,{}); // instantiate a new view model
+
+		equal(viewModel.noneText(),options.messages.noRows, "none text matches 'noRows' message.");
+		$.mockjaxClear(mockAjax); // clean up
+	});
 
 	test("Backwards compatibility with old 'noRows' option property",function(){
+		var 
+			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
+			mockAjax = $.mockjax({
+				url : dummyUrl,
+				responseText : { rows : [], total : 0 }
+			}),
+			options = {
+				url : dummyUrl, // we're testing ajax, use a url
+				autoLoad : true, // auto load for this test
+				async : false, // to make it easier to test, allow the request to be async
+				noRows :  "expected value",
+				messages : {
+					initial : "unexpected value, initial message",
+					noRows : "unexpected value, messages.noRows"
+				},
+				done : function (argument) {
+					ok(true,"done hit.");
+				}
+			},
+			viewModel = new ViewModel(options,undefined,{}); // instantiate a new view model
 
+		equal(viewModel.noneText(),options.noRows, "none text matches 'noRows' message.");
 	});
+
+
+
+
+
+
 	test("Create functions for accessing rows and dataset total from response",function(){
 
 	});
@@ -92,6 +156,9 @@
 
 	});
 	test("Add on row click event",function(){
+
+	});
+	test("Add async to the ajax options",function(){
 
 	});
 })();

@@ -68,7 +68,7 @@ var templates = {
     	cssClass: "ko-grid-total-text"
     },
 	noRows :{
-    	template : "<div data-bind='visible : none,html: noRows'></div>",
+    	template : "<div data-bind='visible : none,html: noneText'></div>",
     	cssClass: "ko-grid-no-rows"
 	},
 	checkbox: {

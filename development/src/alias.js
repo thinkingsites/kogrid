@@ -13,6 +13,7 @@ var
 	isString=  _.isString,
 	map=  _.map,
 	find=  _.find,
+	unwrap = ko.utils.unwrapObservable,
 	bindingHandlers = ko.bindingHandlers,
     // allows for backward compatibility for KO 2.x
 	applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode || function (node, bindings,bindingContext) {
@@ -38,15 +39,12 @@ var
 	makeObservable=  function(obs){
 		return isObservable(obs) ? obs : observable(obs);
 	},
-	getObservable = function(obs){
-		return isObservable(obs) ? obs() : obs;
-	},
 	peekObservable=  function(obs){
 		return isObservable(obs) ? obs.peek() : obs;
 	},
 	windowSize=  observable({
-		h:  window.screen.height,	// $(win).height(),
-		w: window.screen.width		// $(win).width()
+		h:  win.screen.height,	// $(win).height(),
+		w: win.screen.width		// $(win).width()
 	}),
 	generateRandomId=  function(){
 		return "ko-grid-" + Math.round(Math.random() * Math.pow(10,10)).toString();

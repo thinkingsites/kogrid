@@ -52,7 +52,7 @@ bindingHandlers['kogrid'] = {
 	    			var id = generateRandomId();
 	    			viewModel.templates[templateName] = id;
 	    			// these are grid specific templates, append them to the grid element instead of the body
-	    			$("<script type='text/html' id='" + id + "'>" + getObservable(templateName) + "</script>").appendTo(element);
+	    			$("<script type='text/html' id='" + id + "'>" + unwrap(templateName) + "</script>").appendTo(element);
 	    		} else if (_.isString(templateName)) {
 	    		    // if the template does exist and it is a string, append it to the template names
 	    		    viewModel.templates[templateName] = templateName;

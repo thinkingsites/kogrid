@@ -33,13 +33,18 @@ var ViewModel = function(viewModel,element,classes){
     }.bind(self.rowClick);
     self.isString = isString;
     self.any = computed(function(){
-        var r = getObservable(self.rows);
+        var r = unwrap(self.rows);
         return !(_.isUndefined(r) || r.length == 0);
     });
+
+
+    // display text for initial load
     self.none = computed(function(){
-        var r = getObservable(self.rows);
+        var r = unwrap(self.rows);
         return _.isUndefined(r) || r.length == 0;
     });
+    self.noneText = observable(self.messages.initial);
+
     self.resizeHeaders = function(){ 
         // try and find a way to do this without ajax   		
         var 
@@ -238,11 +243,15 @@ var ViewModel = function(viewModel,element,classes){
         // if the grid is an ajax grid, make rows a simple observable
         self.rows = makeObservable(self.rows);
         self.refresh = function () {
+            
             // if there is a loading function, fire it
             if (isFunction(self.loading)) {
                 // pass in the element and the old rows
                 self.loading(self.element,self.rows.peek());
             }
+
+            // once the method begins to load via ajax, tell the no rows message to change to the loading message 
+            self.noneText(self.messages.loading);
 
             // calculate paging data and create ajax object
             var 
@@ -270,13 +279,13 @@ var ViewModel = function(viewModel,element,classes){
 				});
 			}
 
-
             // do ajax
             return $.ajax({
                 url: self.url.peek(),
                 data: extend(paging, ajaxSorting, serverData),
                 type: self.type || 'get',
                 dataType: self.dataType || 'json',
+                async : self.async // allows for the grid to load synchronously if needed
             }).done(function (ajaxResult,textStatus,xhr) {
 
             	// get the rows and the total from the response
@@ -286,6 +295,9 @@ var ViewModel = function(viewModel,element,classes){
                 // set observables
                 self.rows(isFunction(self.map) ? map(rows,self.map) : rows);
                 self.total(total || rows.length || 0);
+
+                // now that the grid is off the initial state, change the no rows message 
+                self.noneText(self.noRows || self.messages.noRows);
 
             }).always(function () {
                 // if there is a loaded function, fire it
@@ -312,7 +324,7 @@ var ViewModel = function(viewModel,element,classes){
         self.refresh = noop;
 		
         // if the grid is populated by a fixed array
-        var _rows = makeObservable(isFunction(self.map) ? map(getObservable(self.rows), self.map) : self.rows);
+        var _rows = makeObservable(isFunction(self.map) ? map(unwrap(self.rows), self.map) : self.rows);
         self.rows = computed({
             read : function(){
                 var 
@@ -322,7 +334,7 @@ var ViewModel = function(viewModel,element,classes){
                 return _rows().slice(start,start+pageSize);
             },
             write : function(val) {
-                _rows(isFunction(self.map) ? map(getObservable(val), self.map) : val);
+                _rows(isFunction(self.map) ? map(unwrap(val), self.map) : val);
             }
         });
 		
