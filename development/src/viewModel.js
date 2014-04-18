@@ -13,19 +13,20 @@ var ViewModel = function(viewModel,element,classes){
     	_sorting = observableArray(),
     	_checkedRows = observableArray();
 	
-    extend(self,defaultOptions,viewModel);
+    // use the deep jquery extend for this call
+    $.extend(true,self,defaultOptions,viewModel);
     self.templates = {};
     self.element = element;
     self.classes = classes;
-    self.rows = makeObservable(self.rows);
+    self.rows = makeObservable(self.rows || []);
     self.height = makeObservable(self.height);
-    self.total = makeObservable(self.total);
+    self.total = makeObservable(self.total || 0);
     self.pageSize = makeObservable(self.pageSize);
     self.pageIndex = makeObservable(self.pageIndex);
     self.url = makeObservable(self.url);
     self.rowClick = function (data,event) {
         var callback = this;
-        if (callback) {
+        if (_.isFunction(callback)) {
             return callback.call(data, data, event);
         } else {
             return true;
@@ -43,7 +44,7 @@ var ViewModel = function(viewModel,element,classes){
         var r = unwrap(self.rows);
         return _.isUndefined(r) || r.length == 0;
     });
-    self.noneText = observable(self.messages.initial);
+    self.noneText = observable(resolve(self.messages,'initial'));
 
     self.resizeHeaders = function(){ 
         // try and find a way to do this without ajax   		
@@ -182,10 +183,11 @@ var ViewModel = function(viewModel,element,classes){
         var
 			totalRows = self.total(),
 			pageSize = self.pageSize();
-        if (isNumber(totalRows) && isNumber(pageSize)) {
+
+        if (isNumber(totalRows) && isNumber(pageSize) && totalRows) {
             return Math.ceil(totalRows / pageSize);
         } else {
-            return 1;
+            return 0;
         }
     });
 
@@ -251,7 +253,7 @@ var ViewModel = function(viewModel,element,classes){
             }
 
             // once the method begins to load via ajax, tell the no rows message to change to the loading message 
-            self.noneText(self.messages.loading);
+            self.noneText(resolve(self.messages,'loading'));
 
             // calculate paging data and create ajax object
             var 
@@ -269,7 +271,9 @@ var ViewModel = function(viewModel,element,classes){
                 return item.direction;
             });
 
-			// resolve serverData to JS and clean it, we don't want to send any undefined, or null values since they turn into strings and often muck things up
+			// resolve serverData to JS and clean it
+            // we don't want to send any undefined, or null values since they turn into strings and often muck things up
+            // at the same time, we want to keep other falsy values
 			serverData = ko.toJS(serverData);
 			if(self.cleanPostData !== false) {
 				_.each(serverData,function (item,key) {
@@ -282,7 +286,7 @@ var ViewModel = function(viewModel,element,classes){
             // do ajax
             return $.ajax({
                 url: self.url.peek(),
-                data: extend(paging, ajaxSorting, serverData),
+                data: extend(paging, ajaxSorting, self.sanitize(serverData)),
                 type: self.type || 'get',
                 dataType: self.dataType || 'json',
                 async : self.async // allows for the grid to load synchronously if needed
@@ -297,8 +301,10 @@ var ViewModel = function(viewModel,element,classes){
                 self.total(total || rows.length || 0);
 
                 // now that the grid is off the initial state, change the no rows message 
-                self.noneText(self.noRows || self.messages.noRows);
+                self.noneText(self.noRows || resolve(self.messages,'noRows'));
 
+            }).fail(function(xhr){
+                self.noneText(resolve(self.messages,'error',xhr));
             }).always(function () {
                 // if there is a loaded function, fire it
                 if (isFunction(self.loaded)) {
@@ -341,6 +347,13 @@ var ViewModel = function(viewModel,element,classes){
         self.total(_rows.peek().length);
     }
 	
+    self.clear = function () {
+        self.rows([]);
+        self.total(0);
+        self.noneText(resolve(self.messages,'initial'));
+    };
+
+
     self.pageIndex.subscribe(self.refresh);
     
     self.pageSize.subscribe(function(){
@@ -439,6 +452,7 @@ var ViewModel = function(viewModel,element,classes){
     this.utils = {
         fixHeaders: self.resizeHeaders,
         refresh: self.refresh,
+        clear : self.clear,
         goToPage: function(pageIndex){
             self.pageIndex(pageIndex);
         },

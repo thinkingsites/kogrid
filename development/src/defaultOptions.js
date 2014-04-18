@@ -36,5 +36,8 @@ var
         },
         getTotal : function(result,xhr) {
         	return result.total;
+        },
+        sanitize : function(data) {
+        	return data;
         }
     };

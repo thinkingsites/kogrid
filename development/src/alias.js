@@ -15,6 +15,13 @@ var
 	find=  _.find,
 	unwrap = ko.utils.unwrapObservable,
 	bindingHandlers = ko.bindingHandlers,
+	resolve = function(obj,key){
+		var result = obj[key];
+		if(_.isFunction(result)){
+			result = result.apply(undefined,Array.prototype.slice.call(arguments,2));
+		};
+		return result;
+	},	
     // allows for backward compatibility for KO 2.x
 	applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode || function (node, bindings,bindingContext) {
 

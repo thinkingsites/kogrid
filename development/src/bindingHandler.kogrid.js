@@ -72,6 +72,14 @@ bindingHandlers['kogrid'] = {
 	
 			// expose the grid utilities, merge them so we keep the original reference if there was a utils object passed in
 			value.utils = extend(value.utils || {},viewModel.utils);
+
+            // there is a bug with the headers where the headers don't display inside a jquery tab
+            // resize on tab activation
+            if (jQuery && jQuery.ui && jQuery.ui.tabs) {
+                $(element).parents(".ui-tabs.ui-widget").on("tabsactivate", function () {
+                    viewModel.utils.fixHeaders();
+                });
+            }
 	    });
 			
 		return { controlsDescendantBindings : true };

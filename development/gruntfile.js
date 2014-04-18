@@ -16,7 +16,7 @@ module.exports = function(grunt) {
       options : {
         separator: ';\n\n',
       },
-      default : {
+      build : {
         files: {
           '<%= vars.buildFileAndFolder %>.js' : [
             'src/header.fragment',
@@ -56,7 +56,7 @@ module.exports = function(grunt) {
       }
     },
     uglify: {
-      default : {
+      build : {
         files : {
           '<%= vars.buildFileAndFolder %>.min.js' : ['<%= vars.buildFileAndFolder %>.js' ]
         }
@@ -77,8 +77,31 @@ module.exports = function(grunt) {
         'along with this program.  If not, see <http://www.gnu.org/licenses/>.\n*/\n\n' 
       }
     },
+    connect : {
+      dev : {
+        options  : {
+        port : 33001,
+        base : '',
+        hostname : 'localhost',
+          open : 'http://localhost:33001/tests/index.html'
+        },
+        livereload : true
+      }
+    },
+    watch : {
+      dev : {
+        files : ['tests/*.js'],
+        options : {
+          livereload : true
+        }
+      }
+      //styles : {
+      //  files : ['webclient/content/styles/*','webclient/content/styles/less/*'],
+      //  tasks : ['less']
+      //}
+    },
     less :{
-      default : 
+      build : 
       {
         options : {
           compress : true
@@ -90,11 +113,14 @@ module.exports = function(grunt) {
     }
   });
 
+  grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-contrib-concat');
 
-  grunt.registerTask('default', ['concat:default','uglify:default','less:default']);
-  grunt.registerTask('demo', ['concat:default','uglify:default','less:default','concat:demo']);
-  grunt.registerTask('release', ['concat:default','uglify:default','less:default','concat:demo','concat:release']);
+  grunt.registerTask('default', ['connect:dev',"watch:dev"]);
+
+  grunt.registerTask('demo', ['concat:build','uglify:build','less:build','concat:demo']);
+  grunt.registerTask('release', ['concat:build','uglify:build','less:build','concat:demo','concat:release']);
 };

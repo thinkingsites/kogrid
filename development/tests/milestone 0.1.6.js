@@ -118,6 +118,64 @@
 		$.mockjaxClear(mockAjax); // clean up
 	});
 
+	test("Messages display on different states - error message",function(){
+		expect(1);
+		var 
+			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
+			mockAjax = $.mockjax({
+				url : dummyUrl,
+				status : 500,
+				responseText : "Unexpected response"
+			}),
+			options = {
+				url : dummyUrl, // we're testing ajax, use a url
+				autoLoad : true, // auto load for this test
+				async : false, // to make it easier to test, allow the request to be async
+				noRows :  "expected value",
+				messages : {
+					initial : "unexpected value, initial message",
+					noRows : "unexpected value, messages.noRows",
+					loading : "unexpected value, messages.loading",
+					error : "expected value"
+				}
+			},
+			viewModel = new ViewModel(options,undefined,{}); // instantiate a new view model
+
+		equal(viewModel.noneText(),options.messages.error, "none text matches 'error' message.");
+		$.mockjaxClear(mockAjax); // clean up
+	});
+
+	test("Messages display on different states - error message as function",function(){
+		expect(2);
+		var 
+			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
+			expectedMessage = "this is my expected message",
+			mockAjax = $.mockjax({
+				url : dummyUrl,
+				status : 500,
+				responseText : "Unexpected response"
+			}),
+			options = {
+				url : dummyUrl, // we're testing ajax, use a url
+				autoLoad : true, // auto load for this test
+				async : false, // to make it easier to test, allow the request to be async
+				noRows :  "expected value",
+				messages : {
+					initial : "unexpected value, initial message",
+					noRows : "unexpected value, messages.noRows",
+					loading : "unexpected value, messages.loading",
+					error : function(xhr){
+						ok(xhr.responseText);
+						return expectedMessage;
+					}
+				}
+			},
+			viewModel = new ViewModel(options,undefined,{}); // instantiate a new view model
+
+		equal(viewModel.noneText(),expectedMessage, "none text matches 'error' message.");
+		$.mockjaxClear(mockAjax); // clean up
+	});
+
 	asyncTest("Messages display on different states - loading message",function(){
 		expect(1);
 		var 
@@ -142,6 +200,7 @@
 
 		setTimeout(function (argument) {
 			equal(viewModel.noneText(),options.messages.loading, "none text matches 'noRows' message.");
+			$.mockjaxClear(mockAjax); // clean up
 			start();
 		},50);
 	});
@@ -266,12 +325,68 @@
 			viewModel = new ViewModel(options,element,{}); // instantiate a new view model
 
 		viewModel.afterRender();
+	});
+	test("Adding format to column",function(){
+		var 
+			expected = "txet modnar",
+			element = $("<div></div>")[0],
+			valueAccessor = ko.observable(12345),
+			allBindings = ko.observable({}), 
+			viewModel = {}, 
+			bindingContext = {
+				$root:  new ViewModel({
+					url : 'whatever'
+				}),
+				$parent: {
+					"id" : 1,
+					"date" : new Date('12/25/2014'),
+					"text" : "random text"
+				},
+				$data: {
+					key : "text",
+					format : function(cellData){
+						equal(bindingContext.$data.text);
+						return cellData.split("").reverse().join("");
+					}
+				},
+				$parentContext : {
+					$index : ko.observable(1),
+				},
+				$index : ko.observable(1),
+				extend : function(){
+					return bindingContext;
+				}
+			};
 
+		// This method throws errors if you're not passing in a real bindingContext for unit testing. The result will come back in the exception, assert against that.
+		try{
+			ko.bindingHandlers.kogrid$cell.init(element,valueAccessor,allBindings,viewModel,bindingContext);
+		} catch (e) {
+			equal(expected,e._result);
+		}
+	});
+	test("Add global formatter",function(){
+		// if string is passed in as the column format, use the global formatter defined in the options
 	});
 	test("Add on row click event",function(){
 
 	});
 	test("Add async to the ajax options",function(){
+
+	});
+	test("Add clear to utils",function(){
+
+	});
+	test("Add grid nav buttons do nothing if there are no pages or records",function(){
+
+	});
+	test("Add error message",function(){
+
+	});
+	test("Make sure messages merge properly",function(){
+
+	});
+	test("Grid defaults to zero pages",function(){
 
 	});
 })();
