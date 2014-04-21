@@ -20,7 +20,7 @@
     if (typeof (_) === undefined) { throw 'LoDash is required, please ensure it is loaded before loading this validation plug-in'; };
 
 // make aliases for minification
-var 
+var
 	throttle  = _.debounce,//ko.extenders.throttle,
 	isObservable = ko.isObservable,
 	observable=  ko.observable,
@@ -36,6 +36,13 @@ var
 	find=  _.find,
 	unwrap = ko.utils.unwrapObservable,
 	bindingHandlers = ko.bindingHandlers,
+	resolve = function(obj,key){
+		var result = obj[key];
+		if(_.isFunction(result)){
+			result = result.apply(undefined,Array.prototype.slice.call(arguments,2));
+		};
+		return result;
+	},
     // allows for backward compatibility for KO 2.x
 	applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode || function (node, bindings,bindingContext) {
 
@@ -53,10 +60,10 @@ var
 	},
 	noop=  function() {},
 	bindThis=  function (toReturn) {
-		return function () { 
-			return this; 
-		}.bind(toReturn);
-	},				
+		return function () {
+			return this.value;
+		}.bind({ value : toReturn });
+	},
 	makeObservable=  function(obs){
 		return isObservable(obs) ? obs : observable(obs);
 	},
@@ -72,28 +79,28 @@ var
 	},
 	addElement = function(appendTo,key,css){
 		// use jquery for ease of use for now until you can move away from it and use plain JS
-		var 
+		var
 		    nodeDescription = templates[key],
 		    result = $(nodeDescription.template).appendTo(appendTo);
-		
+
 		if(nodeDescription.cssClass){
 		    result.addClass(nodeDescription.cssClass)
 		}
-		
+
 		if(css){
 		    result.css(css);
 		}
-		
+
 		return result;
 	},
 	appendjQueryUISortingIcons=  function(options){
-	  
+
 	  // if the sorting icons have been set explicitly to false, leave
 	  if(options.addjQueryUiSortingIcons === false) {
 	    return;
 	  }
-	
-	  var 
+
+	  var
 	    selectors = [
 			"ui-icon",
 			"ui-icon-triangle-2-n-s",
@@ -110,7 +117,7 @@ var
 				return rule.selectorText.slice(1);
 			}).intersection(selectors).value().length == selectors.length;
 	    });
-	
+
 		if(forceAdd || jQueryUiExists){
 			options.sorting.noSortClass += [undefined,selectors[0],selectors[1]].join(" ");
 			options.sorting.ascendingClass += [undefined,selectors[0],selectors[2]].join(" ");
@@ -118,19 +125,22 @@ var
 		}
 	},
 	sizeGridContainer=  function(element,height){
-		var 
+	    var
 			elem = $(element),
 			height = parseInt(height) || height,
-			scrollContainer = $("." + templates.scrollContainer.cssClass,elem),
-			headerHeight = $("." + templates.headContainer.cssClass,elem).outerHeight(),
-			pagerHeight = $("." + templates.pager.cssClass,elem).outerHeight();
-		
-		elem.css("height",height);
-		if(height !== "auto" && height !== "inherit"){
-			scrollContainer.css("height",elem.innerHeight() - headerHeight - pagerHeight);
-		} else {
-			scrollContainer.css("height",height);
-		}
+			shrinkToFit = height === "shrink",
+			scrollContainer = $("." + templates.scrollContainer.cssClass, elem),
+			headerHeight = $("." + templates.headContainer.cssClass, elem).outerHeight(),
+			pagerHeight = $("." + templates.pager.cssClass, elem).outerHeight(),
+			scrollHeight;
+
+	    elem.toggleClass("ko-grid-shrink-to-fit", shrinkToFit);
+
+	    scrollHeight = shrinkToFit ? "auto" :
+            height !== "auto" && height !== "inherit" ? elem.innerHeight() - headerHeight - pagerHeight :
+            height;
+
+	    scrollContainer.css("height", scrollHeight);
 	},
 	recordIndex=  function(viewModel,index){
 	    return ((viewModel.pageIndex.peek() - 1) * viewModel.pageSize.peek()) + index
@@ -151,49 +161,83 @@ var ViewModel = function(viewModel,element,classes){
     }
 
 
-    var 
-    	self = this,
+    var
+        // use the deep jquery extend for this call
+    	self = $.extend(true,this,defaultOptions,viewModel),
     	_totalRows,
     	_ajax,
     	_sorting = observableArray(),
-    	_checkedRows = observableArray();
-	
-    // use the deep jquery extend for this call
-    $.extend(true,self,defaultOptions,viewModel);
+    	_checkedRows = observableArray()
+        _rows = makeObservable(self.rows || []),
+        _pageIndex = makeObservable(self.pageIndex);
+
+
     self.templates = {};
     self.element = element;
     self.classes = classes;
-    self.rows = makeObservable(self.rows || []);
     self.height = makeObservable(self.height);
     self.total = makeObservable(self.total || 0);
     self.pageSize = makeObservable(self.pageSize);
-    self.pageIndex = makeObservable(self.pageIndex);
+
+    self.columns = ko.computed({
+        read : function(){
+            var result = this();
+            if(self.sorting.sortableByDefault) {
+                _.each(result,function(item){
+                    item.sortable = item.sortable !== false ? true : false
+                });
+            }
+            return result;
+        },
+        write : function  (newVal) {
+            this(newVal);
+        },
+        owner : makeObservable(self.columns)
+    });
+
+    // the page index should not show any pages if there are no rows
+    self.pageIndex = ko.computed({
+        read : function () {
+            var val = _pageIndex();
+            if(_rows().length){
+                return val;
+            } else {
+                return 0;
+            }
+        },
+        write : function (newval){
+            _pageIndex(newval);
+        }
+    });
     self.url = makeObservable(self.url);
     self.rowClick = function (data,event) {
         var callback = this;
-        if (callback) {
+        if (_.isFunction(callback)) {
             return callback.call(data, data, event);
         } else {
             return true;
         }
     }.bind(self.rowClick);
     self.isString = isString;
-    self.any = computed(function(){
-        var r = unwrap(self.rows);
-        return !(_.isUndefined(r) || r.length == 0);
+    self.any = computed(function () {
+        return !!self.total();
     });
 
+
+    self.none = computed(function () {
+        return !self.total();
+    });
 
     // display text for initial load
-    self.none = computed(function(){
-        var r = unwrap(self.rows);
-        return _.isUndefined(r) || r.length == 0;
-    });
-    self.noneText = observable(self.messages.initial);
+    self.noneText = observable(resolve(self.messages,'initial'));
 
-    self.resizeHeaders = function(){ 
-        // try and find a way to do this without ajax   		
-        var 
+    self.pagerVisible = ko.computed(function(){
+        return !!unwrap(self.pager);
+    });
+
+    self.resizeHeaders = function(){
+        // try and find a way to do this without ajax
+        var
 			heads = $("." + self.classes.head,self.element),
 			cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
 			    var $this = $(this);
@@ -204,27 +248,27 @@ var ViewModel = function(viewModel,element,classes){
 			    };
 			}),
     		h,c;
-    	
+
         // in order to resize, we want to make sure the number of headers matches the number of cells
         if(heads.length != cells.length){
-    		
+
             heads.css({
                 position:"relative",
                 top : 0,
                 left : "auto",
                 width : Math.floor(100 / heads.length) + "%"
             }).width();
-    		
+
             return;
         }
 
-        // set the height of the head container to the height of the table headers	
+        // set the height of the head container to the height of the table headers
         heads.first().parent().height(heads.first().height());
-    		
+
         for(var i = 0; i < heads.length; i++){
             h = heads.eq(i);
             c = cells[i];
-    			
+
             h.css({
                 position: 'absolute',
                 top:0,
@@ -232,9 +276,9 @@ var ViewModel = function(viewModel,element,classes){
                 left: c.left -1,
                 width : c.width
             });
-        };					
+        };
     };
-	
+
     // self.afterRender doesn't fire when unit testing the viewModel, only if the grid has been data bound to an element
     self.afterRender = throttle(function(){
         self.resizeHeaders();
@@ -243,12 +287,13 @@ var ViewModel = function(viewModel,element,classes){
             self.done(element,self.utils)
         }
     },10);
-		
+
     self.sort = function (event) {
 
         // if the column is not sortable, leave immediately
-        if (this.sortable !== true)
+        if (this.sortable !== true) {
             return;
+        }
 
         var
 			column = this,
@@ -284,13 +329,13 @@ var ViewModel = function(viewModel,element,classes){
 
         if (isFunction(self.refresh)) {
             self.refresh();
-        } else {
+        }/* else {
             if (isObservable(self.rows)) {
                 // sort the observable by the sorting
             } else {
                 // sort the array by the sorting
             }
-        }
+        }*/
     };
 
     self.sortClass = function (column) {
@@ -303,19 +348,19 @@ var ViewModel = function(viewModel,element,classes){
             } else if (mySort.direction == self.sorting.desc) {
                 return self.sorting.descendingClass;
             }
-        } 
+        }
         return self.sorting.noSortClass;
     };
-    
+
     if (!isObservable(self.total)) {
         self.total = computed({
             read: function () {
                 if (isNumber(_totalRows)) {
                     return _totalRows;
-                } else if (isObservable(self.rows)) {
-                    return self.rows.peek().length;
-                } else if (_.isArray(self.rows)) {
-                    return self.rows.length;
+                } else if (isObservable(_rows)) {
+                    return _rows.peek().length;
+                } else if (_.isArray(_rows)) {
+                    return _rows.length;
                 }
             },
             write: function (newVal) {
@@ -337,39 +382,52 @@ var ViewModel = function(viewModel,element,classes){
     });
 
     self.first = function () {
-        self.pageIndex(1);
+        _pageIndex(1);
     };
-	
+
     self.previous = function () {
-        var newPage = self.pageIndex.peek();
-        self.pageIndex(Math.max(1,newPage - 1));
+        var newPage = _pageIndex.peek();
+        _pageIndex(Math.max(1,newPage - 1));
     };
-	
+
     self.next = function () {
         var
-          newPage = self.pageIndex.peek(),
+          newPage = _pageIndex.peek(),
 	      maxPage = self.totalPages.peek();
-        self.pageIndex(Math.min(maxPage,newPage + 1));
+        _pageIndex(Math.min(maxPage,newPage + 1));
     };
-	
+
     self.last = function () {
-        self.pageIndex(self.totalPages.peek());
+        _pageIndex(self.totalPages.peek());
     };
-	
+
     self.goToPage = function () {
         var page = parseInt(self.goToPageText.peek());
         if(isNumber(page) && page >= 1 && page <= self.totalPages.peek())
-            self.pageIndex(page);
-        else 
+            _pageIndex(page);
+        else
             self.goToPageText("");
     };
-	
+
+    // disabling functions for pagination
+    self.isPreviousEnabled = function(){
+        return _rows().length > 0 && 1 < _pageIndex();
+    };
+
+    self.isNextEnabled = function(){
+        return _rows().length > 0 && _pageIndex() < self.totalPages();
+    };
+
+    self.isGoToPageEnabled = function(){
+        return _rows().length > 0;
+    };
+
     self.goToPageText = observable();
 
     // any time the window size changes, re-render the headers
     windowSize.subscribe(self.resizeHeaders);
 
-    // find all observables in 
+    // find all observables in
     (function sniff(val){
         _.forOwn(val,function(item,key){
             var toSniff = item;
@@ -387,8 +445,8 @@ var ViewModel = function(viewModel,element,classes){
 
     // now that we're set up, let's set up ajax only if we've been given a url
     if (isString(self.url.peek())) {
-        // if the grid is an ajax grid, make rows a simple observable
-        self.rows = makeObservable(self.rows);
+        // if the grid is an ajax grid, use existing rows as a simple observable
+        self.rows = _rows;
         self.refresh = function () {
 
             // if there is a loading function, fire it
@@ -397,26 +455,33 @@ var ViewModel = function(viewModel,element,classes){
                 self.loading(self.element,self.rows.peek());
             }
 
-            // once the method begins to load via ajax, tell the no rows message to change to the loading message 
-            self.noneText(self.messages.loading);
+            // once the method begins to load via ajax, tell the no rows message to change to the loading message
+            self.noneText(resolve(self.messages,'loading'));
 
             // calculate paging data and create ajax object
-            var 
-                pageIndex = self.pageIndex.peek(),
+            var
+                pageIndex = _pageIndex.peek(),
                 pageSize = self.pageSize.peek(),
                 paging = isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
                 serverData = peekObservable(self.data),
                 ajaxSorting = {};
-                
+
             ajaxSorting[self.sorting.sortColumn] = map(_sorting.peek(),function(item){
                 return item.key;
             });
-  	        
+
             ajaxSorting[self.sorting.sortDirection] = map(_sorting.peek(), function (item) {
                 return item.direction;
             });
 
-			// resolve serverData to JS and clean it, we don't want to send any undefined, or null values since they turn into strings and often muck things up
+            if(!self.sorting.allowMultiSort) {
+                ajaxSorting[self.sorting.sortColumn]  = ajaxSorting[self.sorting.sortColumn][0];
+                ajaxSorting[self.sorting.sortDirection]  = ajaxSorting[self.sorting.sortDirection][0];
+            }
+
+			// resolve serverData to JS and clean it
+            // we don't want to send any undefined, or null values since they turn into strings and often muck things up
+            // at the same time, we want to keep other falsy values
 			serverData = ko.toJS(serverData);
 			if(self.cleanPostData !== false) {
 				_.each(serverData,function (item,key) {
@@ -443,9 +508,11 @@ var ViewModel = function(viewModel,element,classes){
                 self.rows(isFunction(self.map) ? map(rows,self.map) : rows);
                 self.total(total || rows.length || 0);
 
-                // now that the grid is off the initial state, change the no rows message 
-                self.noneText(self.noRows || self.messages.noRows);
+                // now that the grid is off the initial state, change the no rows message
+                self.noneText(self.noRows || resolve(self.messages,'noRows'));
 
+            }).fail(function(xhr){
+                self.noneText(resolve(self.messages,'error',xhr));
             }).always(function () {
                 // if there is a loaded function, fire it
                 if (isFunction(self.loaded)) {
@@ -454,13 +521,13 @@ var ViewModel = function(viewModel,element,classes){
                 }
             })
             // return promise object
-            .promise(); 
+            .promise();
         };
 
         if(isObservable(self.data)){
             self.data.subscribe(self.refresh);
         }
-      
+
         self.url.subscribe(self.refresh);
 
         // only auto load the grid if the autoLoad option is set to truthy
@@ -469,41 +536,48 @@ var ViewModel = function(viewModel,element,classes){
         }
     } else {
         self.refresh = noop;
-		
+
         // if the grid is populated by a fixed array
-        var _rows = makeObservable(isFunction(self.map) ? map(unwrap(self.rows), self.map) : self.rows);
         self.rows = computed({
             read : function(){
-                var 
+                var
+                    result = _rows(),
     				pageSize = self.pageSize(),
-    				start = (self.pageIndex()-1) * pageSize;
-    			
-                return _rows().slice(start,start+pageSize);
+    				start = (_pageIndex()-1) * pageSize;
+
+                // if there is a map, use it
+                if(isFunction(self.map)) {
+                    result = map(result,self.map);
+                }
+
+                return result.slice(start,start+pageSize);
             },
             write : function(val) {
-                _rows(isFunction(self.map) ? map(unwrap(val), self.map) : val);
+                _rows(val);
             }
         });
-		
+
         self.total(_rows.peek().length);
+        _rows.subscribe(function(){
+            self.total(_rows.peek().length);
+        });
     }
-	
+
     self.clear = function () {
         self.rows([]);
         self.total(0);
-        self.noneText(self.messages.initial);
+        self.noneText(resolve(self.messages,'initial'));
     };
 
+    _pageIndex.subscribe(self.refresh);
 
-    self.pageIndex.subscribe(self.refresh);
-    
     self.pageSize.subscribe(function(){
-        var 
+        var
     		totalPages = self.totalPages.peek(),
-    		pageIndex = self.pageIndex.peek();	    	    	
+    		pageIndex = _pageIndex.peek();
         if(pageIndex > totalPages){
             // if the page index is greater than the total pages, set the page index and let its subscription take care of refreshing the grid
-            self.pageIndex(totalPages);
+            _pageIndex(totalPages);
         } else {
             self.refresh();
         }
@@ -512,17 +586,17 @@ var ViewModel = function(viewModel,element,classes){
     self.height.subscribe(function(newVal){
         sizeGridContainer(self.element,newVal);
     });
-	
+
     self.isColumnVisible = function(column){
-        column = column || this;		    		
+        column = column || this;
         if(isObservable(column.visible) || _.isBoolean(column.visible))
             return column.visible;
-        else 
+        else
             return true;
     };
 
     // encapsulate checkboxes in a single object
-    
+
     self.cb = {
         visible : function () {
             return !_.isEmpty(self.checkbox);
@@ -583,19 +657,19 @@ var ViewModel = function(viewModel,element,classes){
                     return item.i == recordIndex(self, context.$index())
                 };
         	}
-        	
+
             return _.find(_checkedRows(),callback);
         },
         rows: _checkedRows
 	};
-	
+
     // create the raw utils object for the grid
     this.utils = {
         fixHeaders: self.resizeHeaders,
         refresh: self.refresh,
         clear : self.clear,
         goToPage: function(pageIndex){
-            self.pageIndex(pageIndex);
+            _pageIndex(pageIndex);
         },
         // this should not be made a computed because it uses an argument
         getChecked: function (getIndexes) {
@@ -634,7 +708,7 @@ var
 	    pageSizeOptions : [10,25,50,100,200,'All'],
 	    pageIndex:1,
 	    pager: true,
-	    height: "auto",
+	    height: "auto", // will accept a number, a pixel count, and the values 'auto' and 'shrink'
 	    autoLoad  : true,
 	    async : true,
 	    loading: function (element) {
@@ -644,7 +718,7 @@ var
 	    	$("table", element).css({ opacity: 1 });
 	    },
 	    messages : {
-	    	initial : "", 
+	    	initial : "",
 	    	noRows : "No rows available",
 	    	loading : "Loading..."
 	    },
@@ -652,6 +726,7 @@ var
         sorting : {
 			allowMultiSort : false,
 			sortColumn : "sortColumn",
+			sortableByDefault : false,
 			sortDirection : "sortDirection",
 			asc: "asc",
 			desc: "desc",
@@ -701,23 +776,23 @@ var templates = {
     	cssClass: "ko-grid-cell"
     },
     pager : {
-    	template : "<div></div>",
+    	template : "<div data-bind='visible : pagerVisible'></div>",
     	cssClass: "ko-grid-pager"
     },
 	first : {
-    	template : "<button type='button' data-bind='click : first, disable : pageIndex() == 1' title='First'>&lt;&lt; First</button>",
+    	template : "<button type='button' data-bind='click : first, enable : isPreviousEnabled' title='First'>&lt;&lt; First</button>",
     	cssClass: "ko-grid-first"
     },
 	previous : {
-    	template : "<button type='button' data-bind='click : previous, disable : pageIndex() == 1' title='Previous'>&lt; Previous</button>",
+    	template : "<button type='button' data-bind='click : previous, enable : isPreviousEnabled' title='Previous'>&lt; Previous</button>",
     	cssClass: "ko-grid-previous"
     },
 	next : {
-    	template : "<button type='button' data-bind='click : next, disable : pageIndex() == totalPages()' title='Next'>Next &gt;</button>",
+    	template : "<button type='button' data-bind='click : next, enable : isNextEnabled' title='Next'>Next &gt;</button>",
     	cssClass: "ko-grid-next"
     },
 	last : {
-    	template : "<button type='button' data-bind='click : last, disable : pageIndex() == totalPages()' title='Last'>Last  &gt;&gt;</button>",
+    	template : "<button type='button' data-bind='click : last, enable : isNextEnabled' title='Last'>Last  &gt;&gt;</button>",
     	cssClass: "ko-grid-last"
     },
 	refresh  : {
@@ -729,10 +804,10 @@ var templates = {
     	cssClass: "ko-grid-page-size"
     },
 	goToPage : {
-    	template : "<div><input type='text' data-bind='value : goToPageText'><button data-bind='click : goToPage'>Go</button></div>",
+    	template : "<div><input type='text' data-bind='value : goToPageText, enable : isGoToPageEnabled'><button data-bind='click : goToPage, enable : isGoToPageEnabled'>Go</button></div>",
     	cssClass: "ko-grid-go-to-page"
     },
-		pagingText :{
+	pagingText :{
     	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: totalPages'></span></div>",
     	cssClass: "ko-grid-paging-text"
     },
@@ -752,7 +827,8 @@ var templates = {
 
 bindingHandlers['kogrid$cell'] = {
 	init : function(element, valueAccessor, allBindings, viewModel, bindingContext){
-		var 
+		var
+			result,
 			root = bindingContext.$root,
 			data = bindingContext.$parent,
 			column = bindingContext.$data,
@@ -762,42 +838,63 @@ bindingHandlers['kogrid$cell'] = {
 			};
 
 		if(templateName){
+			// bind the data that gets sent to the template here, for unit testing
+			result = extend({ },column.data,data);
+
 			// if there is a template, bind it and display the template
 			bindingAccessors.template = bindThis({
 				name : templateName,
     			// the column can contain extra and/or default row data
         		// add the extra data to what's passed into the template
-				data : extend({ },column.data,data)
+				data : result
 			});
 		} else {
 			// if there is no template, display the row value
-    		var 
-				result,
+    		var
 				columnName = isString(column) ? column : column.key,
 				columnValue = data[columnName],
-				result = isFunction(columnValue) ? columnValue() : columnValue;					
-			
+				result = isFunction(columnValue) ? columnValue() : columnValue;
+
+			// if a format has been passed into the column, run it
+			if(_.isFunction(column.format)){
+				result = column.format(result);
+			}
+
 			bindingAccessors.text = bindThis(result);
 		}
-		
-		extend(bindingAccessors,{
-			style : bindThis(column.style),
-			css : bindThis(column.css),
-		});
-		
-	    // the extended binding context allows children to expose the parent's index.... maybe this isn't the best ay
 
+		// if there is a style or css binding on the column, apply them to bindingAccessors
+		if(column.style){
+			bindingAccessors['style'] = bindThis(column.style)
+		}
+
+		if(column.style){
+			bindingAccessors['css'] = bindThis(column.css)
+		}
+
+	    // the extended binding context allows children to expose the parent's index.... maybe this isn't the best way
 		var contextVars = makeContextVariables(bindingContext.$root,bindingContext.$parentContext.$index(),bindingContext.$index());
-		applyBindingAccessorsToNode(element, bindingAccessors, bindingContext.extend(contextVars));
-		
-        return { controlsDescendantBindings: true };
-	}
+
+	    try
+	    {
+	    	var newBindingContext = bindingContext.extend(contextVars);
+			applyBindingAccessorsToNode(element, bindingAccessors, newBindingContext);
+		} catch (e){
+			// the above clause should not throw exceptions, however, it will during unit testing if we're not mocking out everything
+			// rethrow the error, but add the result to the object so we an assert the result
+			throw e._result = result,e;
+		}
+
+        return {
+        	controlsDescendantBindings : true
+        };
+    }
 };;
 
 bindingHandlers['kogrid'] = {
 	init : function(element, valueAccessor,allbindings,vm,bindingContext){
 		$(function(){
-	    	var 	    		
+	    	var
 	    		// set up local settings
 	    		myClasses = (function(){
 	    			var result = {};
@@ -806,27 +903,28 @@ bindingHandlers['kogrid'] = {
 		    		});
 		    		return result;
 	    		}()),
-	    		
-    		// create view model
-    		value = valueAccessor(),
-    		viewModel = new ViewModel(value,element,myClasses),
-    		columns = isObservable(viewModel.columns) ? viewModel.columns.peek() : viewModel.columns,
-    		
-	    	// create html for header and body
-    		elem = $(element).addClass("ko-grid-main").css({ height : viewModel.height.peek() }),
-    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
-            headCheck = _.isEmpty(viewModel.checkbox) ? undefined : $("<div></div>").addClass(templates.head.cssClass).appendTo(headContainer),
-    		head = addElement(headContainer,'head'),
-    		sortIcon = addElement(head, 'sortIcon'),
-    		scrollContainer = addElement(elem,'scrollContainer'),
-    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
-    		rows = addElement(table, 'row'),
-            checks = _.isEmpty(viewModel.checkbox) ? undefined : addElement(rows, 'checkbox').addClass(templates.cell.cssClass),
-    		cells = addElement(rows,'cell'),
-            norows = addElement(scrollContainer,'noRows'),
-    		pager,first,previous,next,last,refresh,goToPage;
-	    	
-	    	if(viewModel.pager){
+
+	    		// create view model
+	    		value = valueAccessor(),
+	    		viewModel = new ViewModel(value,element,myClasses),
+	    		columns = isObservable(viewModel.columns) ? viewModel.columns.peek() : viewModel.columns,
+
+
+
+		    	// create html for header and body
+	    		elem = $(element).addClass("ko-grid-main"),
+	    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
+	            headCheck = _.isEmpty(viewModel.checkbox) ? undefined : $("<div></div>").addClass(templates.head.cssClass).appendTo(headContainer),
+	    		head = addElement(headContainer,'head'),
+	    		sortIcon = addElement(head, 'sortIcon'),
+	    		scrollContainer = addElement(elem,'scrollContainer'),
+	    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
+	    		rows = addElement(table, 'row'),
+	            checks = _.isEmpty(viewModel.checkbox) ? undefined : addElement(rows, 'checkbox').addClass(templates.cell.cssClass),
+	    		cells = addElement(rows,'cell'),
+	            norows = addElement(scrollContainer,'noRows'),
+	    		pager,first,previous,next,last,refresh,goToPage;
+
 	    		pager = addElement(elem,'pager');
 	    		if (viewModel.refresh !== noop) {
 	    		    addElement(pager, 'refresh');
@@ -839,8 +937,7 @@ bindingHandlers['kogrid'] = {
 	    		addElement(pager,'pageSize');
 	    		addElement(pager,'goToPage');
 	    		addElement(pager,'totalText');
-	    	}
-	    	
+
 	    	var makeTemplate = function(templateName){
 	    		// if the element exists, leave
 	    		if(!elementExists(templateName))
@@ -854,18 +951,18 @@ bindingHandlers['kogrid'] = {
 	    		    viewModel.templates[templateName] = templateName;
 	    		}
 	    	};
-	    	
+
 	    	// add dynamic templates
 	    	_(columns).filter(function(item){
 	    		return isString(item.template);
 	    	}).each(function(item){
 	    		makeTemplate(item.template);
 	    	});
-	    	
+
 	    	appendjQueryUISortingIcons(viewModel);
 
 	    	ko.applyBindingsToDescendants(viewModel,element);
-	
+
 			// expose the grid utilities, merge them so we keep the original reference if there was a utils object passed in
 			value.utils = extend(value.utils || {},viewModel.utils);
 
@@ -877,9 +974,9 @@ bindingHandlers['kogrid'] = {
                 });
             }
 	    });
-			
+
 		return { controlsDescendantBindings : true };
-	}, 
+	},
 	options : defaultOptions,
 	templates: templates
 };;

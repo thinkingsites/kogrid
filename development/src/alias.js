@@ -104,19 +104,22 @@ var
 		}
 	},
 	sizeGridContainer=  function(element,height){
-		var
+	    var
 			elem = $(element),
 			height = parseInt(height) || height,
-			scrollContainer = $("." + templates.scrollContainer.cssClass,elem),
-			headerHeight = $("." + templates.headContainer.cssClass,elem).outerHeight(),
-			pagerHeight = $("." + templates.pager.cssClass,elem).outerHeight();
+			shrinkToFit = height === "shrink",
+			scrollContainer = $("." + templates.scrollContainer.cssClass, elem),
+			headerHeight = $("." + templates.headContainer.cssClass, elem).outerHeight(),
+			pagerHeight = $("." + templates.pager.cssClass, elem).outerHeight(),
+			scrollHeight;
 
-		elem.css("height",height);
-		if(height !== "auto" && height !== "inherit"){
-			scrollContainer.css("height",elem.innerHeight() - headerHeight - pagerHeight);
-		} else {
-			scrollContainer.css("height",height);
-		}
+	    elem.toggleClass("ko-grid-shrink-to-fit", shrinkToFit);
+
+	    scrollHeight = shrinkToFit ? "auto" :
+            height !== "auto" && height !== "inherit" ? elem.innerHeight() - headerHeight - pagerHeight :
+            height;
+
+	    scrollContainer.css("height", scrollHeight);
 	},
 	recordIndex=  function(viewModel,index){
 	    return ((viewModel.pageIndex.peek() - 1) * viewModel.pageSize.peek()) + index

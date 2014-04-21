@@ -23,6 +23,23 @@ var ViewModel = function(viewModel,element,classes){
     self.height = makeObservable(self.height);
     self.total = makeObservable(self.total || 0);
     self.pageSize = makeObservable(self.pageSize);
+
+    self.columns = ko.computed({
+        read : function(){
+            var result = this();
+            if(self.sorting.sortableByDefault) {
+                _.each(result,function(item){
+                    item.sortable = item.sortable !== false ? true : false
+                });
+            }
+            return result;
+        },
+        write : function  (newVal) {
+            this(newVal);
+        },
+        owner : makeObservable(self.columns)
+    });
+
     // the page index should not show any pages if there are no rows
     self.pageIndex = ko.computed({
         read : function () {
@@ -47,18 +64,21 @@ var ViewModel = function(viewModel,element,classes){
         }
     }.bind(self.rowClick);
     self.isString = isString;
-    self.any = computed(function(){
-        var r = unwrap(_rows);
-        return !(_.isUndefined(r) || r.length == 0);
+    self.any = computed(function () {
+        return !!self.total();
     });
 
+
+    self.none = computed(function () {
+        return !self.total();
+    });
 
     // display text for initial load
-    self.none = computed(function(){
-        var r = unwrap(_rows);
-        return _.isUndefined(r) || r.length == 0;
-    });
     self.noneText = observable(resolve(self.messages,'initial'));
+
+    self.pagerVisible = ko.computed(function(){
+        return !!unwrap(self.pager);
+    });
 
     self.resizeHeaders = function(){
         // try and find a way to do this without ajax
@@ -116,8 +136,9 @@ var ViewModel = function(viewModel,element,classes){
     self.sort = function (event) {
 
         // if the column is not sortable, leave immediately
-        if (this.sortable !== true)
+        if (this.sortable !== true) {
             return;
+        }
 
         var
 			column = this,
@@ -298,6 +319,11 @@ var ViewModel = function(viewModel,element,classes){
                 return item.direction;
             });
 
+            if(!self.sorting.allowMultiSort) {
+                ajaxSorting[self.sorting.sortColumn]  = ajaxSorting[self.sorting.sortColumn][0];
+                ajaxSorting[self.sorting.sortDirection]  = ajaxSorting[self.sorting.sortDirection][0];
+            }
+
 			// resolve serverData to JS and clean it
             // we don't want to send any undefined, or null values since they turn into strings and often muck things up
             // at the same time, we want to keep other falsy values
@@ -375,6 +401,8 @@ var ViewModel = function(viewModel,element,classes){
                 _rows(val);
             }
         });
+
+        self.total(_rows.peek().length);
         _rows.subscribe(function(){
             self.total(_rows.peek().length);
         });
@@ -385,7 +413,6 @@ var ViewModel = function(viewModel,element,classes){
         self.total(0);
         self.noneText(resolve(self.messages,'initial'));
     };
-
 
     _pageIndex.subscribe(self.refresh);
 

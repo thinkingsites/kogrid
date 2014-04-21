@@ -27,11 +27,25 @@
   <script type='text/javascript'>
     $(function(){
       var options = {
-        rows : ko.observableArray(),
+        rows : ko.observableArray([
+          { id : 1 , text : "control" },
+          { id : 1 , text : "control" },
+          { id : 1 , text : "control" },
+          { id : 1 , text : "control" },
+          { id : 1 , text : "control" },
+        ]),
         columns : [
           { title : "id" , key : "id" },
           { title : "text" , key : "text" },
-        ]
+        ],
+        sorting : {
+          sortableByDefault : true
+        },
+        messages : {
+          loading : "loading",
+          error : "error",
+          noRows : "noRows"
+        }
       };
       ko.applyBindings(options);
     });

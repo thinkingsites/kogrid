@@ -1,6 +1,6 @@
 bindingHandlers['kogrid$cell'] = {
 	init : function(element, valueAccessor, allBindings, viewModel, bindingContext){
-		var 
+		var
 			result,
 			root = bindingContext.$root,
 			data = bindingContext.$parent,
@@ -23,19 +23,19 @@ bindingHandlers['kogrid$cell'] = {
 			});
 		} else {
 			// if there is no template, display the row value
-    		var 
+    		var
 				columnName = isString(column) ? column : column.key,
 				columnValue = data[columnName],
-				result = isFunction(columnValue) ? columnValue() : columnValue;					
+				result = isFunction(columnValue) ? columnValue() : columnValue;
 
 			// if a format has been passed into the column, run it
 			if(_.isFunction(column.format)){
 				result = column.format(result);
 			}
-			
+
 			bindingAccessors.text = bindThis(result);
 		}
-		
+
 		// if there is a style or css binding on the column, apply them to bindingAccessors
 		if(column.style){
 			bindingAccessors['style'] = bindThis(column.style)
@@ -44,7 +44,7 @@ bindingHandlers['kogrid$cell'] = {
 		if(column.style){
 			bindingAccessors['css'] = bindThis(column.css)
 		}
-		
+
 	    // the extended binding context allows children to expose the parent's index.... maybe this isn't the best way
 		var contextVars = makeContextVariables(bindingContext.$root,bindingContext.$parentContext.$index(),bindingContext.$index());
 
@@ -57,8 +57,8 @@ bindingHandlers['kogrid$cell'] = {
 			// rethrow the error, but add the result to the object so we an assert the result
 			throw e._result = result,e;
 		}
-		
-        return { 
+
+        return {
         	controlsDescendantBindings : true
         };
     }

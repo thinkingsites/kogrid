@@ -28,7 +28,7 @@ var templates = {
     	cssClass: "ko-grid-cell"
     },
     pager : {
-    	template : "<div></div>",
+    	template : "<div data-bind='visible : pagerVisible'></div>",
     	cssClass: "ko-grid-pager"
     },
 	first : {
@@ -59,7 +59,7 @@ var templates = {
     	template : "<div><input type='text' data-bind='value : goToPageText, enable : isGoToPageEnabled'><button data-bind='click : goToPage, enable : isGoToPageEnabled'>Go</button></div>",
     	cssClass: "ko-grid-go-to-page"
     },
-		pagingText :{
+	pagingText :{
     	template : "<div>Page <span data-bind='text:pageIndex'></span> of <span data-bind='text: totalPages'></span></div>",
     	cssClass: "ko-grid-paging-text"
     },

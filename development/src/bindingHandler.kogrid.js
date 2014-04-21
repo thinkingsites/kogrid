@@ -16,13 +16,10 @@ bindingHandlers['kogrid'] = {
 	    		viewModel = new ViewModel(value,element,myClasses),
 	    		columns = isObservable(viewModel.columns) ? viewModel.columns.peek() : viewModel.columns,
 
-	    		// get the height of the grid
-	    		height = viewModel.height.peek(),
-	    		shrinkToFit = height == "shrink",
-	    		mainHeight = /auto|\d+px|%/.test(height) ?  height : "auto",
+
 
 		    	// create html for header and body
-	    		elem = $(element).addClass("ko-grid-main").css({ height : mainHeight }).toggleClass("ko-grid-shrink-to-fit",shrinkToFit),
+	    		elem = $(element).addClass("ko-grid-main"),
 	    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
 	            headCheck = _.isEmpty(viewModel.checkbox) ? undefined : $("<div></div>").addClass(templates.head.cssClass).appendTo(headContainer),
 	    		head = addElement(headContainer,'head'),
@@ -35,7 +32,6 @@ bindingHandlers['kogrid'] = {
 	            norows = addElement(scrollContainer,'noRows'),
 	    		pager,first,previous,next,last,refresh,goToPage;
 
-	    	if(viewModel.pager){
 	    		pager = addElement(elem,'pager');
 	    		if (viewModel.refresh !== noop) {
 	    		    addElement(pager, 'refresh');
@@ -48,7 +44,6 @@ bindingHandlers['kogrid'] = {
 	    		addElement(pager,'pageSize');
 	    		addElement(pager,'goToPage');
 	    		addElement(pager,'totalText');
-	    	}
 
 	    	var makeTemplate = function(templateName){
 	    		// if the element exists, leave

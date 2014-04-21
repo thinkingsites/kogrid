@@ -5,10 +5,9 @@ var
 	    pageSizeOptions : [10,25,50,100,200,'All'],
 	    pageIndex:1,
 	    pager: true,
-	    height: "auto",
+	    height: "auto", // will accept a number, a pixel count, and the values 'auto' and 'shrink'
 	    autoLoad  : true,
 	    async : true,
-	    shrinkToFit : false,
 	    loading: function (element) {
 	    	$("table", element).css({ opacity: 0.5 });
 	    },
@@ -16,7 +15,7 @@ var
 	    	$("table", element).css({ opacity: 1 });
 	    },
 	    messages : {
-	    	initial : "", 
+	    	initial : "",
 	    	noRows : "No rows available",
 	    	loading : "Loading..."
 	    },
@@ -24,6 +23,7 @@ var
         sorting : {
 			allowMultiSort : false,
 			sortColumn : "sortColumn",
+			sortableByDefault : false,
 			sortDirection : "sortDirection",
 			asc: "asc",
 			desc: "desc",

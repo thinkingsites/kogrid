@@ -367,7 +367,8 @@
 			equal(expected,e._result);
 		}
 	});
-	test("Shrink to fit",function(){
+	asyncTest("Shrink to fit",function(){
+		expect(2);
 		equal("auto",defaultOptions.height,"Default height option set to auto");
 
 		// create a virtual node to bind against
@@ -386,7 +387,11 @@
 		};
 		ko.applyBindings(viewModel,node[0]);
 
-		ok(node.hasClass("ko-grid-shrink-to-fit"),"CSS class shrink to fit has been added.");
+		// the shrink to fit class doesn't get added until after render, do an async assert
+		setTimeout(function(){
+			ok(node.hasClass("ko-grid-shrink-to-fit"),"CSS class shrink to fit has been added.");
+			start();
+		},0);
 	});
 
 	// already implemented, but need tests
