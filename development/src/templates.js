@@ -32,19 +32,19 @@ var templates = {
     	cssClass: "ko-grid-pager"
     },
 	first : {
-    	template : "<button type='button' data-bind='click : first, disable : pageIndex() == 1' title='First'>&lt;&lt; First</button>",
+    	template : "<button type='button' data-bind='click : first, enable : isPreviousEnabled' title='First'>&lt;&lt; First</button>",
     	cssClass: "ko-grid-first"
     },
 	previous : {
-    	template : "<button type='button' data-bind='click : previous, disable : pageIndex() == 1' title='Previous'>&lt; Previous</button>",
+    	template : "<button type='button' data-bind='click : previous, enable : isPreviousEnabled' title='Previous'>&lt; Previous</button>",
     	cssClass: "ko-grid-previous"
     },
 	next : {
-    	template : "<button type='button' data-bind='click : next, disable : pageIndex() == totalPages()' title='Next'>Next &gt;</button>",
+    	template : "<button type='button' data-bind='click : next, enable : isNextEnabled' title='Next'>Next &gt;</button>",
     	cssClass: "ko-grid-next"
     },
 	last : {
-    	template : "<button type='button' data-bind='click : last, disable : pageIndex() == totalPages()' title='Last'>Last  &gt;&gt;</button>",
+    	template : "<button type='button' data-bind='click : last, enable : isNextEnabled' title='Last'>Last  &gt;&gt;</button>",
     	cssClass: "ko-grid-last"
     },
 	refresh  : {
@@ -56,7 +56,7 @@ var templates = {
     	cssClass: "ko-grid-page-size"
     },
 	goToPage : {
-    	template : "<div><input type='text' data-bind='value : goToPageText'><button data-bind='click : goToPage'>Go</button></div>",
+    	template : "<div><input type='text' data-bind='value : goToPageText, enable : isGoToPageEnabled'><button data-bind='click : goToPage, enable : isGoToPageEnabled'>Go</button></div>",
     	cssClass: "ko-grid-go-to-page"
     },
 		pagingText :{

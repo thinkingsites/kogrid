@@ -3,19 +3,17 @@
 <head>
   <meta charset="utf-8">
   <title>QUnit Example</title>
-  <link rel="stylesheet" href="libs/qunit-1.14.0.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a href="sandbox.html" id="Sandbox">Go to sandbox</a>
-  <div id="qunit"></div>
-  <div id="qunit-fixture"></div>
+  <a href="index.html" id="tests">Go to tests</a>
+  <div data-bind="kogrid : $data"></div>
 
   <!-- libs -->
   <script src="libs/lodash.modern-2.4.1.js"></script>
   <script src="libs/jquery-1.11.0.js"></script>
   <script src="libs/knockout-3.1.0.js"></script>
   <script src="libs/jquery.mockjax.js"></script>
-  <script src="libs/qunit-1.14.0.js"></script>
 
   <!-- src -->
   <script src="../src/alias.js"></script>
@@ -26,8 +24,17 @@
   <script src="../src/bindingHandler.kogrid.js"></script>
   <script src="../src/window.resize.js"></script>
 
-  <!-- tests -->
-  <script src="milestone-0.1.6-bugs.js"></script>
-  <script src="milestone-0.1.6.js"></script>
+  <script type='text/javascript'>
+    $(function(){
+      var options = {
+        rows : ko.observableArray(),
+        columns : [
+          { title : "id" , key : "id" },
+          { title : "text" , key : "text" },
+        ]
+      };
+      ko.applyBindings(options);
+    });
+  </script>
 </body>
 </html>

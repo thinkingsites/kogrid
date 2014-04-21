@@ -8,6 +8,7 @@ var
 	    height: "auto",
 	    autoLoad  : true,
 	    async : true,
+	    shrinkToFit : false,
 	    loading: function (element) {
 	    	$("table", element).css({ opacity: 0.5 });
 	    },

@@ -6,23 +6,37 @@ var ViewModel = function(viewModel,element,classes){
     }
 
 
-    var 
-    	self = this,
+    var
+        // use the deep jquery extend for this call
+    	self = $.extend(true,this,defaultOptions,viewModel),
     	_totalRows,
     	_ajax,
     	_sorting = observableArray(),
-    	_checkedRows = observableArray();
-	
-    // use the deep jquery extend for this call
-    $.extend(true,self,defaultOptions,viewModel);
+    	_checkedRows = observableArray()
+        _rows = makeObservable(self.rows || []),
+        _pageIndex = makeObservable(self.pageIndex);
+
+
     self.templates = {};
     self.element = element;
     self.classes = classes;
-    self.rows = makeObservable(self.rows || []);
     self.height = makeObservable(self.height);
     self.total = makeObservable(self.total || 0);
     self.pageSize = makeObservable(self.pageSize);
-    self.pageIndex = makeObservable(self.pageIndex);
+    // the page index should not show any pages if there are no rows
+    self.pageIndex = ko.computed({
+        read : function () {
+            var val = _pageIndex();
+            if(_rows().length){
+                return val;
+            } else {
+                return 0;
+            }
+        },
+        write : function (newval){
+            _pageIndex(newval);
+        }
+    });
     self.url = makeObservable(self.url);
     self.rowClick = function (data,event) {
         var callback = this;
@@ -34,21 +48,21 @@ var ViewModel = function(viewModel,element,classes){
     }.bind(self.rowClick);
     self.isString = isString;
     self.any = computed(function(){
-        var r = unwrap(self.rows);
+        var r = unwrap(_rows);
         return !(_.isUndefined(r) || r.length == 0);
     });
 
 
     // display text for initial load
     self.none = computed(function(){
-        var r = unwrap(self.rows);
+        var r = unwrap(_rows);
         return _.isUndefined(r) || r.length == 0;
     });
     self.noneText = observable(resolve(self.messages,'initial'));
 
-    self.resizeHeaders = function(){ 
-        // try and find a way to do this without ajax   		
-        var 
+    self.resizeHeaders = function(){
+        // try and find a way to do this without ajax
+        var
 			heads = $("." + self.classes.head,self.element),
 			cells = $("." + self.classes.row + ":first ." + self.classes.cell,self.element).map(function(){
 			    var $this = $(this);
@@ -59,27 +73,27 @@ var ViewModel = function(viewModel,element,classes){
 			    };
 			}),
     		h,c;
-    	
+
         // in order to resize, we want to make sure the number of headers matches the number of cells
         if(heads.length != cells.length){
-    		
+
             heads.css({
                 position:"relative",
                 top : 0,
                 left : "auto",
                 width : Math.floor(100 / heads.length) + "%"
             }).width();
-    		
+
             return;
         }
 
-        // set the height of the head container to the height of the table headers	
+        // set the height of the head container to the height of the table headers
         heads.first().parent().height(heads.first().height());
-    		
+
         for(var i = 0; i < heads.length; i++){
             h = heads.eq(i);
             c = cells[i];
-    			
+
             h.css({
                 position: 'absolute',
                 top:0,
@@ -87,9 +101,9 @@ var ViewModel = function(viewModel,element,classes){
                 left: c.left -1,
                 width : c.width
             });
-        };					
+        };
     };
-	
+
     // self.afterRender doesn't fire when unit testing the viewModel, only if the grid has been data bound to an element
     self.afterRender = throttle(function(){
         self.resizeHeaders();
@@ -98,7 +112,7 @@ var ViewModel = function(viewModel,element,classes){
             self.done(element,self.utils)
         }
     },10);
-		
+
     self.sort = function (event) {
 
         // if the column is not sortable, leave immediately
@@ -139,13 +153,13 @@ var ViewModel = function(viewModel,element,classes){
 
         if (isFunction(self.refresh)) {
             self.refresh();
-        } else {
+        }/* else {
             if (isObservable(self.rows)) {
                 // sort the observable by the sorting
             } else {
                 // sort the array by the sorting
             }
-        }
+        }*/
     };
 
     self.sortClass = function (column) {
@@ -158,19 +172,19 @@ var ViewModel = function(viewModel,element,classes){
             } else if (mySort.direction == self.sorting.desc) {
                 return self.sorting.descendingClass;
             }
-        } 
+        }
         return self.sorting.noSortClass;
     };
-    
+
     if (!isObservable(self.total)) {
         self.total = computed({
             read: function () {
                 if (isNumber(_totalRows)) {
                     return _totalRows;
-                } else if (isObservable(self.rows)) {
-                    return self.rows.peek().length;
-                } else if (_.isArray(self.rows)) {
-                    return self.rows.length;
+                } else if (isObservable(_rows)) {
+                    return _rows.peek().length;
+                } else if (_.isArray(_rows)) {
+                    return _rows.length;
                 }
             },
             write: function (newVal) {
@@ -192,39 +206,52 @@ var ViewModel = function(viewModel,element,classes){
     });
 
     self.first = function () {
-        self.pageIndex(1);
+        _pageIndex(1);
     };
-	
+
     self.previous = function () {
-        var newPage = self.pageIndex.peek();
-        self.pageIndex(Math.max(1,newPage - 1));
+        var newPage = _pageIndex.peek();
+        _pageIndex(Math.max(1,newPage - 1));
     };
-	
+
     self.next = function () {
         var
-          newPage = self.pageIndex.peek(),
+          newPage = _pageIndex.peek(),
 	      maxPage = self.totalPages.peek();
-        self.pageIndex(Math.min(maxPage,newPage + 1));
+        _pageIndex(Math.min(maxPage,newPage + 1));
     };
-	
+
     self.last = function () {
-        self.pageIndex(self.totalPages.peek());
+        _pageIndex(self.totalPages.peek());
     };
-	
+
     self.goToPage = function () {
         var page = parseInt(self.goToPageText.peek());
         if(isNumber(page) && page >= 1 && page <= self.totalPages.peek())
-            self.pageIndex(page);
-        else 
+            _pageIndex(page);
+        else
             self.goToPageText("");
     };
-	
+
+    // disabling functions for pagination
+    self.isPreviousEnabled = function(){
+        return _rows().length > 0 && 1 < _pageIndex();
+    };
+
+    self.isNextEnabled = function(){
+        return _rows().length > 0 && _pageIndex() < self.totalPages();
+    };
+
+    self.isGoToPageEnabled = function(){
+        return _rows().length > 0;
+    };
+
     self.goToPageText = observable();
 
     // any time the window size changes, re-render the headers
     windowSize.subscribe(self.resizeHeaders);
 
-    // find all observables in 
+    // find all observables in
     (function sniff(val){
         _.forOwn(val,function(item,key){
             var toSniff = item;
@@ -242,8 +269,8 @@ var ViewModel = function(viewModel,element,classes){
 
     // now that we're set up, let's set up ajax only if we've been given a url
     if (isString(self.url.peek())) {
-        // if the grid is an ajax grid, make rows a simple observable
-        self.rows = makeObservable(self.rows);
+        // if the grid is an ajax grid, use existing rows as a simple observable
+        self.rows = _rows;
         self.refresh = function () {
 
             // if there is a loading function, fire it
@@ -252,21 +279,21 @@ var ViewModel = function(viewModel,element,classes){
                 self.loading(self.element,self.rows.peek());
             }
 
-            // once the method begins to load via ajax, tell the no rows message to change to the loading message 
+            // once the method begins to load via ajax, tell the no rows message to change to the loading message
             self.noneText(resolve(self.messages,'loading'));
 
             // calculate paging data and create ajax object
-            var 
-                pageIndex = self.pageIndex.peek(),
+            var
+                pageIndex = _pageIndex.peek(),
                 pageSize = self.pageSize.peek(),
                 paging = isNumber(pageSize) ? { pageIndex: pageIndex, pageSize: pageSize } : { pageIndex: 1 },
                 serverData = peekObservable(self.data),
                 ajaxSorting = {};
-                
+
             ajaxSorting[self.sorting.sortColumn] = map(_sorting.peek(),function(item){
                 return item.key;
             });
-  	        
+
             ajaxSorting[self.sorting.sortDirection] = map(_sorting.peek(), function (item) {
                 return item.direction;
             });
@@ -300,7 +327,7 @@ var ViewModel = function(viewModel,element,classes){
                 self.rows(isFunction(self.map) ? map(rows,self.map) : rows);
                 self.total(total || rows.length || 0);
 
-                // now that the grid is off the initial state, change the no rows message 
+                // now that the grid is off the initial state, change the no rows message
                 self.noneText(self.noRows || resolve(self.messages,'noRows'));
 
             }).fail(function(xhr){
@@ -313,13 +340,13 @@ var ViewModel = function(viewModel,element,classes){
                 }
             })
             // return promise object
-            .promise(); 
+            .promise();
         };
 
         if(isObservable(self.data)){
             self.data.subscribe(self.refresh);
         }
-      
+
         self.url.subscribe(self.refresh);
 
         // only auto load the grid if the autoLoad option is set to truthy
@@ -328,25 +355,31 @@ var ViewModel = function(viewModel,element,classes){
         }
     } else {
         self.refresh = noop;
-		
+
         // if the grid is populated by a fixed array
-        var _rows = makeObservable(isFunction(self.map) ? map(unwrap(self.rows), self.map) : self.rows);
         self.rows = computed({
             read : function(){
-                var 
+                var
+                    result = _rows(),
     				pageSize = self.pageSize(),
-    				start = (self.pageIndex()-1) * pageSize;
-    			
-                return _rows().slice(start,start+pageSize);
+    				start = (_pageIndex()-1) * pageSize;
+
+                // if there is a map, use it
+                if(isFunction(self.map)) {
+                    result = map(result,self.map);
+                }
+
+                return result.slice(start,start+pageSize);
             },
             write : function(val) {
-                _rows(isFunction(self.map) ? map(unwrap(val), self.map) : val);
+                _rows(val);
             }
         });
-		
-        self.total(_rows.peek().length);
+        _rows.subscribe(function(){
+            self.total(_rows.peek().length);
+        });
     }
-	
+
     self.clear = function () {
         self.rows([]);
         self.total(0);
@@ -354,15 +387,15 @@ var ViewModel = function(viewModel,element,classes){
     };
 
 
-    self.pageIndex.subscribe(self.refresh);
-    
+    _pageIndex.subscribe(self.refresh);
+
     self.pageSize.subscribe(function(){
-        var 
+        var
     		totalPages = self.totalPages.peek(),
-    		pageIndex = self.pageIndex.peek();	    	    	
+    		pageIndex = _pageIndex.peek();
         if(pageIndex > totalPages){
             // if the page index is greater than the total pages, set the page index and let its subscription take care of refreshing the grid
-            self.pageIndex(totalPages);
+            _pageIndex(totalPages);
         } else {
             self.refresh();
         }
@@ -371,17 +404,17 @@ var ViewModel = function(viewModel,element,classes){
     self.height.subscribe(function(newVal){
         sizeGridContainer(self.element,newVal);
     });
-	
+
     self.isColumnVisible = function(column){
-        column = column || this;		    		
+        column = column || this;
         if(isObservable(column.visible) || _.isBoolean(column.visible))
             return column.visible;
-        else 
+        else
             return true;
     };
 
     // encapsulate checkboxes in a single object
-    
+
     self.cb = {
         visible : function () {
             return !_.isEmpty(self.checkbox);
@@ -442,19 +475,19 @@ var ViewModel = function(viewModel,element,classes){
                     return item.i == recordIndex(self, context.$index())
                 };
         	}
-        	
+
             return _.find(_checkedRows(),callback);
         },
         rows: _checkedRows
 	};
-	
+
     // create the raw utils object for the grid
     this.utils = {
         fixHeaders: self.resizeHeaders,
         refresh: self.refresh,
         clear : self.clear,
         goToPage: function(pageIndex){
-            self.pageIndex(pageIndex);
+            _pageIndex(pageIndex);
         },
         // this should not be made a computed because it uses an argument
         getChecked: function (getIndexes) {

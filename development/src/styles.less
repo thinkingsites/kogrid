@@ -19,7 +19,7 @@
 		white-space:nowrap;
 		height: @header-height;
 
-		.ko-grid-head { 
+		.ko-grid-head {
 			display:inline-block;
 			font-weight:bold;
 			padding:0 10px;
@@ -42,13 +42,18 @@
 			    cursor: pointer;
 			}
 
-			.ko-grid-sort-icon { 
-				background-color:transparent; 
+			.ko-grid-sort-icon {
+				background-color:transparent;
 				border:none;
-				display:inline-block; 
+				display:inline-block;
 			    vertical-align:middle;
 			}
 		}
+	}
+
+	// if the main grid has the shrink to fit flag, override the min-height
+	&.ko-grid-shrink-to-fit .ko-grid-scroll-container {
+		min-height:0;
 	}
 
 	.ko-grid-scroll-container {
@@ -65,7 +70,7 @@
 			.ko-grid-cell {
 				border: solid 1px @border-color;
 				padding:0 10px;
-				&:first-child 
+				&:first-child
 				{
 					border-left:none;
 				}

@@ -1,0 +1,106 @@
+.border-box {
+  -mox-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.ko-grid-main {
+  position: relative;
+  overflow: hidden;
+  border: solid 1px #000000;
+  -mox-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.ko-grid-main .ko-grid-head-container {
+  background-color: #ebf1f6;
+  border-bottom: solid 1px #000000;
+  white-space: nowrap;
+  height: 20px;
+}
+.ko-grid-main .ko-grid-head-container .ko-grid-head {
+  display: inline-block;
+  font-weight: bold;
+  padding: 0 10px;
+  white-space: nowrap;
+  position: relative;
+  top: 0px;
+  float: none;
+  overflow: hidden;
+  height: 20px;
+  line-height: 20px;
+  border-left: solid 1px #000000;
+  -mox-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.ko-grid-main .ko-grid-head-container .ko-grid-head:first-child {
+  border-left: none;
+}
+.ko-grid-main .ko-grid-head-container .ko-grid-head .ko-grid-is-sortable {
+  cursor: pointer;
+}
+.ko-grid-main .ko-grid-head-container .ko-grid-head .ko-grid-sort-icon {
+  background-color: transparent;
+  border: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+.ko-grid-main.ko-grid-shrink-to-fit .ko-grid-scroll-container {
+  min-height: 0;
+}
+.ko-grid-main .ko-grid-scroll-container {
+  overflow-y: scroll;
+  width: 100%;
+  position: relative;
+  min-height: 100px;
+}
+.ko-grid-main .ko-grid-scroll-container table.ko-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: -1px;
+}
+.ko-grid-main .ko-grid-scroll-container table.ko-grid-table .ko-grid-cell {
+  border: solid 1px #000000;
+  padding: 0 10px;
+}
+.ko-grid-main .ko-grid-scroll-container table.ko-grid-table .ko-grid-cell:first-child {
+  border-left: none;
+}
+.ko-grid-main .ko-grid-scroll-container .ko-grid-no-rows {
+  height: 30px;
+  line-height: 30px;
+  width: 100%;
+  position: absolute;
+  top: 48%;
+  text-align: center;
+}
+.ko-grid-main .ko-grid-scroll-container .ko-grid-no-rows:after {
+  content: '\00a0';
+}
+.ko-grid-main .ko-grid-pager {
+  overflow: hidden;
+  text-align: center;
+  height: 26px;
+  line-height: 26px;
+  border-top: none;
+  padding: 0 10px 0 0;
+  border-top: solid 1px #000000;
+}
+.ko-grid-main .ko-grid-pager > * {
+  display: inline-block;
+}
+.ko-grid-main .ko-grid-pager .ko-grid-refresh {
+  float: left;
+}
+.ko-grid-main .ko-grid-pager .ko-grid-total-text {
+  float: right;
+}
+.ko-grid-main .ko-grid-pager .ko-grid-page-size,
+.ko-grid-main .ko-grid-pager .ko-grid-paging-text,
+.ko-grid-main .ko-grid-pager .ko-grid-go-to-page {
+  margin: 0 10px;
+}
+.ko-grid-main .ko-grid-pager .ko-grid-go-to-page input {
+  width: 30px;
+  text-align: center;
+}

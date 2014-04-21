@@ -14,11 +14,13 @@
 		return "ajax" + Math.floor(Math.random() * 10000000).toString();
 	};
 
+
+
 	module("milestone v0.1.6");
 	asyncTest("Add auto load option - testing for true.",function(){
 		expect(2);
 
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
@@ -50,7 +52,7 @@
 	asyncTest("Add auto load option - testing for false.",function(){
 		expect(1);
 
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
@@ -58,7 +60,7 @@
 				response : function(){
 					ok(false,"mockjax hit.");
 					this.responseText = dummyAjaxData;
-				}		
+				}
 			}),
 			options = {
 				url : dummyUrl, // we're testing ajax, use a url
@@ -79,7 +81,7 @@
 	});
 
 	test("Messages display on different states - initial message",function(){
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			options = {
 				url : dummyUrl, // we're testing ajax, use a url
@@ -97,7 +99,7 @@
 	});
 
 	test("Messages display on different states - no rows message",function(){
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
@@ -120,7 +122,7 @@
 
 	test("Messages display on different states - error message",function(){
 		expect(1);
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
@@ -147,7 +149,7 @@
 
 	test("Messages display on different states - error message as function",function(){
 		expect(2);
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			expectedMessage = "this is my expected message",
 			mockAjax = $.mockjax({
@@ -178,7 +180,7 @@
 
 	asyncTest("Messages display on different states - loading message",function(){
 		expect(1);
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
@@ -206,7 +208,7 @@
 	});
 
 	test("Backwards compatibility with old 'noRows' option property",function(){
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			mockAjax = $.mockjax({
 				url : dummyUrl,
@@ -230,10 +232,10 @@
 
 	test("Create functions for accessing rows and dataset total from response - base function",function(){
 		expect(8);
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			expectedRows = dummyAjaxData.rows,
-			expectedTotal = dummyAjaxData.total 
+			expectedTotal = dummyAjaxData.total
 			mockAjax = $.mockjax({
 				url : dummyUrl,
 				responseText : dummyAjaxData
@@ -265,7 +267,7 @@
 
 	test("Create functions for accessing rows and dataset total from response - total in headers",function(){
 		expect(6);
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests
 			expectedRows = [ // seven rows
 				{ id : 1, value : Math.random() },
@@ -307,7 +309,7 @@
 
 	asyncTest("Add the utils as the second argument of the 'done' event",function(){
 		expect(2);
-		var 
+		var
 			dummyUrl = makeAjaxUrl(), // must have unique URLs for async tests,
 			element = $("<div></div>");
 			mockAjax = $.mockjax({
@@ -327,12 +329,12 @@
 		viewModel.afterRender();
 	});
 	test("Adding format to column",function(){
-		var 
+		var
 			expected = "txet modnar",
 			element = $("<div></div>")[0],
 			valueAccessor = ko.observable(12345),
-			allBindings = ko.observable({}), 
-			viewModel = {}, 
+			allBindings = ko.observable({}),
+			viewModel = {},
 			bindingContext = {
 				$root:  new ViewModel({
 					url : 'whatever'
@@ -365,28 +367,44 @@
 			equal(expected,e._result);
 		}
 	});
-	test("Add global formatter",function(){
-		// if string is passed in as the column format, use the global formatter defined in the options
-	});
-	test("Add on row click event",function(){
+	test("Shrink to fit",function(){
+		equal("auto",defaultOptions.height,"Default height option set to auto");
 
+		// create a virtual node to bind against
+		var node = $("<div data-bind='kogrid : $data'></div>");
+		var viewModel = {
+			rows : ko.observableArray([
+				{ id : 1, text : "control" },
+				{ id : 1, text : undefined },
+				{ id : 1, text : null },
+			]),
+			columns : [
+				{ title : "id" , key : "id" },
+				{ title : "text" , key : "text" },
+			],
+			height : "shrink"
+		};
+		ko.applyBindings(viewModel,node[0]);
+
+		ok(node.hasClass("ko-grid-shrink-to-fit"),"CSS class shrink to fit has been added.");
 	});
+
+	// already implemented, but need tests
 	test("Add async to the ajax options",function(){
 
 	});
 	test("Add clear to utils",function(){
 
 	});
-	test("Add grid nav buttons do nothing if there are no pages or records",function(){
-
-	});
-	test("Add error message",function(){
-
-	});
 	test("Make sure messages merge properly",function(){
 
 	});
-	test("Grid defaults to zero pages",function(){
 
+	// new features
+	test("Add on global row click event",function(){
+		// is this necassary?  Will this give me any specific advantage over individual row click events?
+	});
+	test("Add global formatter",function(){
+		// if string is passed in as the column format, use the global formatter defined in the options
 	});
 })();

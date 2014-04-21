@@ -1,7 +1,7 @@
 bindingHandlers['kogrid'] = {
 	init : function(element, valueAccessor,allbindings,vm,bindingContext){
 		$(function(){
-	    	var 	    		
+	    	var
 	    		// set up local settings
 	    		myClasses = (function(){
 	    			var result = {};
@@ -10,26 +10,31 @@ bindingHandlers['kogrid'] = {
 		    		});
 		    		return result;
 	    		}()),
-	    		
-    		// create view model
-    		value = valueAccessor(),
-    		viewModel = new ViewModel(value,element,myClasses),
-    		columns = isObservable(viewModel.columns) ? viewModel.columns.peek() : viewModel.columns,
-    		
-	    	// create html for header and body
-    		elem = $(element).addClass("ko-grid-main").css({ height : viewModel.height.peek() }),
-    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
-            headCheck = _.isEmpty(viewModel.checkbox) ? undefined : $("<div></div>").addClass(templates.head.cssClass).appendTo(headContainer),
-    		head = addElement(headContainer,'head'),
-    		sortIcon = addElement(head, 'sortIcon'),
-    		scrollContainer = addElement(elem,'scrollContainer'),
-    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
-    		rows = addElement(table, 'row'),
-            checks = _.isEmpty(viewModel.checkbox) ? undefined : addElement(rows, 'checkbox').addClass(templates.cell.cssClass),
-    		cells = addElement(rows,'cell'),
-            norows = addElement(scrollContainer,'noRows'),
-    		pager,first,previous,next,last,refresh,goToPage;
-	    	
+
+	    		// create view model
+	    		value = valueAccessor(),
+	    		viewModel = new ViewModel(value,element,myClasses),
+	    		columns = isObservable(viewModel.columns) ? viewModel.columns.peek() : viewModel.columns,
+
+	    		// get the height of the grid
+	    		height = viewModel.height.peek(),
+	    		shrinkToFit = height == "shrink",
+	    		mainHeight = /auto|\d+px|%/.test(height) ?  height : "auto",
+
+		    	// create html for header and body
+	    		elem = $(element).addClass("ko-grid-main").css({ height : mainHeight }).toggleClass("ko-grid-shrink-to-fit",shrinkToFit),
+	    		headContainer = addElement(elem,'headContainer',{ position : 'relative' }),
+	            headCheck = _.isEmpty(viewModel.checkbox) ? undefined : $("<div></div>").addClass(templates.head.cssClass).appendTo(headContainer),
+	    		head = addElement(headContainer,'head'),
+	    		sortIcon = addElement(head, 'sortIcon'),
+	    		scrollContainer = addElement(elem,'scrollContainer'),
+	    		table = addElement(scrollContainer,'table',{ position : 'relative' }),
+	    		rows = addElement(table, 'row'),
+	            checks = _.isEmpty(viewModel.checkbox) ? undefined : addElement(rows, 'checkbox').addClass(templates.cell.cssClass),
+	    		cells = addElement(rows,'cell'),
+	            norows = addElement(scrollContainer,'noRows'),
+	    		pager,first,previous,next,last,refresh,goToPage;
+
 	    	if(viewModel.pager){
 	    		pager = addElement(elem,'pager');
 	    		if (viewModel.refresh !== noop) {
@@ -44,7 +49,7 @@ bindingHandlers['kogrid'] = {
 	    		addElement(pager,'goToPage');
 	    		addElement(pager,'totalText');
 	    	}
-	    	
+
 	    	var makeTemplate = function(templateName){
 	    		// if the element exists, leave
 	    		if(!elementExists(templateName))
@@ -58,18 +63,18 @@ bindingHandlers['kogrid'] = {
 	    		    viewModel.templates[templateName] = templateName;
 	    		}
 	    	};
-	    	
+
 	    	// add dynamic templates
 	    	_(columns).filter(function(item){
 	    		return isString(item.template);
 	    	}).each(function(item){
 	    		makeTemplate(item.template);
 	    	});
-	    	
+
 	    	appendjQueryUISortingIcons(viewModel);
 
 	    	ko.applyBindingsToDescendants(viewModel,element);
-	
+
 			// expose the grid utilities, merge them so we keep the original reference if there was a utils object passed in
 			value.utils = extend(value.utils || {},viewModel.utils);
 
@@ -81,9 +86,9 @@ bindingHandlers['kogrid'] = {
                 });
             }
 	    });
-			
+
 		return { controlsDescendantBindings : true };
-	}, 
+	},
 	options : defaultOptions,
 	templates: templates
 };

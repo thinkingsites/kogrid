@@ -84,23 +84,24 @@ module.exports = function(grunt) {
         base : '',
         hostname : 'localhost',
           open : 'http://localhost:33001/tests/index.html'
-        },
-        livereload : true
+        }
       }
     },
     watch : {
       dev : {
-        files : ['tests/*.js'],
-        options : {
-          livereload : true
-        }
+        files : ['src/styles.less'],
+        tasks : ['less:dev']
       }
-      //styles : {
-      //  files : ['webclient/content/styles/*','webclient/content/styles/less/*'],
-      //  tasks : ['less']
-      //}
     },
     less :{
+      dev : {
+        options : {
+          compress : false
+        },
+        files : {
+          'tests/styles.css' : ['src/styles.less']
+        }
+      },
       build : 
       {
         options : {
@@ -119,7 +120,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-contrib-concat');
 
-  grunt.registerTask('default', ['connect:dev',"watch:dev"]);
+  grunt.registerTask('default', ['less:dev','connect:dev',"watch:dev"]);
 
   grunt.registerTask('demo', ['concat:build','uglify:build','less:build','concat:demo']);
   grunt.registerTask('release', ['concat:build','uglify:build','less:build','concat:demo','concat:release']);

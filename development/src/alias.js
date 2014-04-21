@@ -1,5 +1,5 @@
 // make aliases for minification
-var 
+var
 	throttle  = _.debounce,//ko.extenders.throttle,
 	isObservable = ko.isObservable,
 	observable=  ko.observable,
@@ -21,7 +21,7 @@ var
 			result = result.apply(undefined,Array.prototype.slice.call(arguments,2));
 		};
 		return result;
-	},	
+	},
     // allows for backward compatibility for KO 2.x
 	applyBindingAccessorsToNode = ko.applyBindingAccessorsToNode || function (node, bindings,bindingContext) {
 
@@ -39,10 +39,10 @@ var
 	},
 	noop=  function() {},
 	bindThis=  function (toReturn) {
-		return function () { 
-			return this; 
-		}.bind(toReturn);
-	},				
+		return function () {
+			return this.value;
+		}.bind({ value : toReturn });
+	},
 	makeObservable=  function(obs){
 		return isObservable(obs) ? obs : observable(obs);
 	},
@@ -58,28 +58,28 @@ var
 	},
 	addElement = function(appendTo,key,css){
 		// use jquery for ease of use for now until you can move away from it and use plain JS
-		var 
+		var
 		    nodeDescription = templates[key],
 		    result = $(nodeDescription.template).appendTo(appendTo);
-		
+
 		if(nodeDescription.cssClass){
 		    result.addClass(nodeDescription.cssClass)
 		}
-		
+
 		if(css){
 		    result.css(css);
 		}
-		
+
 		return result;
 	},
 	appendjQueryUISortingIcons=  function(options){
-	  
+
 	  // if the sorting icons have been set explicitly to false, leave
 	  if(options.addjQueryUiSortingIcons === false) {
 	    return;
 	  }
-	
-	  var 
+
+	  var
 	    selectors = [
 			"ui-icon",
 			"ui-icon-triangle-2-n-s",
@@ -96,7 +96,7 @@ var
 				return rule.selectorText.slice(1);
 			}).intersection(selectors).value().length == selectors.length;
 	    });
-	
+
 		if(forceAdd || jQueryUiExists){
 			options.sorting.noSortClass += [undefined,selectors[0],selectors[1]].join(" ");
 			options.sorting.ascendingClass += [undefined,selectors[0],selectors[2]].join(" ");
@@ -104,13 +104,13 @@ var
 		}
 	},
 	sizeGridContainer=  function(element,height){
-		var 
+		var
 			elem = $(element),
 			height = parseInt(height) || height,
 			scrollContainer = $("." + templates.scrollContainer.cssClass,elem),
 			headerHeight = $("." + templates.headContainer.cssClass,elem).outerHeight(),
 			pagerHeight = $("." + templates.pager.cssClass,elem).outerHeight();
-		
+
 		elem.css("height",height);
 		if(height !== "auto" && height !== "inherit"){
 			scrollContainer.css("height",elem.innerHeight() - headerHeight - pagerHeight);
