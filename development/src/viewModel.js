@@ -142,15 +142,17 @@ var ViewModel = function(viewModel,element,classes){
 
         var
 			column = this,
+            // find the existing sort to see if we need to swap the direction, otherwise create a new sort
 			appendSort = find(_sorting.peek(), function (item, index) {
 			    return item.key === column.key;
 			}) || {
 			    key: column.key,
+                sortOn : column.sortOn || column.key
 			    direction: column.direction
 			},
-				sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
-				    return item.key != column.key;
-				});
+			sortingPlaceholder = _.filter(_sorting.peek(), function (item) {
+			    return item.key != column.key;
+			});
 
         if (appendSort.direction === self.sorting.asc) {
             appendSort.direction = self.sorting.desc;
@@ -312,7 +314,7 @@ var ViewModel = function(viewModel,element,classes){
                 ajaxSorting = {};
 
             ajaxSorting[self.sorting.sortColumn] = map(_sorting.peek(),function(item){
-                return item.key;
+                return item.sortOn;
             });
 
             ajaxSorting[self.sorting.sortDirection] = map(_sorting.peek(), function (item) {
